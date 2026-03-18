@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 from decouple import config, Csv
 import dj_database_url
 
@@ -83,11 +82,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
-    },
-}
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# ── CSRF trusted origins (required for Django 4.0+ behind a proxy) ────────────
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://127.0.0.1', cast=Csv())
 
 # ── Auth redirects ─────────────────────────────────────────────────────────────
 LOGIN_URL = '/login/'
