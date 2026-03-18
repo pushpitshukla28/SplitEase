@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: splitease
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn splitease.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true        # Render auto-generates a secure key
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"     # Render sets the real hostname automatically
+      - key: PYTHON_VERSION
+        value: "3.13.0"

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Add Expense – {{ trip.name }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'trip_detail' trip.pk %}" class="back-link">← Back to {{ trip.name }}</a>
+
+<div class="page-header">
+  <div>
+    <h1>Add Expense</h1>
+    <p>Trip: <strong>{{ trip.name }}</strong></p>
+  </div>
+</div>
+
+<div style="max-width:600px;">
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="id_description">Description *</label>
+        <input type="text" name="description" id="id_description" class="form-control"
+          value="{{ form.description.value|default:'' }}" required
+          placeholder="e.g. Dinner at the beach">
+        {% if form.description.errors %}
+          <ul class="errorlist">{% for e in form.description.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label" for="id_amount">Amount (₹) *</label>
+          <input type="number" name="amount" id="id_amount" class="form-control"
+            value="{{ form.amount.value|default:'' }}" step="0.01" min="0.01" required
+            placeholder="0.00">
+          {% if form.amount.errors %}
+            <ul class="errorlist">{% for e in form.amount.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_date">Date *</label>
+          <input type="date" name="date" id="id_date" class="form-control"
+            value="{{ form.date.value|default:'' }}" required>
+          {% if form.date.errors %}
+            <ul class="errorlist">{% for e in form.date.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="id_paid_by">Paid By *</label>
+        <select name="paid_by" id="id_paid_by" class="form-control" required>
+          <option value="">-- Select member --</option>
+          {% for member in form.paid_by.field.queryset %}
+            <option value="{{ member.pk }}"
+              {% if form.paid_by.value|stringformat:"s" == member.pk|stringformat:"s" %}selected{% endif %}>
+              {{ member.username }}{% if member.get_full_name %} ({{ member.get_full_name }}){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+        {% if form.paid_by.errors %}
+          <ul class="errorlist">{% for e in form.paid_by.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          Split Between *
+          <small style="font-weight:400;color:var(--text-muted);margin-left:0.5rem;">
+            (Equal split among selected)
+          </small>
+        </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--primary);margin-bottom:0.5rem;cursor:pointer;">
+          <input type="checkbox" id="select-all-members"> Select All
+        </label>
+        <div class="checkbox-list">
+          {% for choice in form.split_members %}
+            <label>
+              <input type="checkbox" name="split_members" value="{{ choice.data.value }}"
+                class="member-checkbox"
+                {% if choice.data.value|stringformat:"s" in form.split_members.value|default_if_none:"" %}checked{% endif %}>
+              {{ choice.choice_label }}
+            </label>
+          {% endfor %}
+        </div>
+        {% if form.split_members.errors %}
+          <ul class="errorlist">{% for e in form.split_members.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
+        <button type="submit" class="btn btn-success">Save Expense</button>
+        <a href="{% url 'trip_detail' trip.pk %}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

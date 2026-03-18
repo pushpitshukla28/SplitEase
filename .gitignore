@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Django
+*.sqlite3
+db.sqlite3
+staticfiles/
+media/
+
+# Environment variables — NEVER commit secrets
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Migrations (keep these — they define your DB schema)
+# core/migrations/   <-- intentionally NOT ignored

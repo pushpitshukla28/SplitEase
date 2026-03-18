@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}My Expenses – SplitEase{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>📊 My Personal Expenses</h1>
+    <p>Track your individual spending.</p>
+  </div>
+  <button id="toggle-pe-form" class="btn btn-primary">
+    + Add Expense <span class="toggle-icon">▼</span>
+  </button>
+</div>
+
+<!-- Add Expense Form -->
+<div id="pe-form-section" class="card" style="margin-bottom:1.75rem;display:none;">
+  <div class="card-header"><h3>Add New Expense</h3></div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="pe-form-grid">
+      <div class="form-group">
+        <label class="form-label" for="id_amount">Amount (₹) *</label>
+        <input type="number" name="amount" id="id_amount" class="form-control"
+          value="{{ form.amount.value|default:'' }}" step="0.01" min="0.01" required placeholder="0.00">
+        {% if form.amount.errors %}
+          <ul class="errorlist">{% for e in form.amount.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="id_category">Category *</label>
+        <select name="category" id="id_category" class="form-control" required>
+          {% for choice in form.category.field.choices %}
+            <option value="{{ choice.0 }}"
+              {% if form.category.value == choice.0 %}selected{% endif %}>
+              {{ choice.1 }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="id_note">Note</label>
+        <input type="text" name="note" id="id_note" class="form-control"
+          value="{{ form.note.value|default:'' }}" placeholder="Optional note...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="id_date">Date *</label>
+        <input type="date" name="date" id="id_date" class="form-control"
+          value="{{ form.date.value|default:'' }}" required>
+        {% if form.date.errors %}
+          <ul class="errorlist">{% for e in form.date.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Expense</button>
+  </form>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="margin-bottom:1.75rem;">
+  <div class="stat-card orange">
+    <div class="stat-label">Total Spent</div>
+    <div class="stat-value">₹{{ total|floatformat:2 }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Transactions</div>
+    <div class="stat-value">{{ expenses.count }}</div>
+  </div>
+</div>
+
+<!-- Category breakdown -->
+{% if cat_totals %}
+<div class="section-title" style="margin-bottom:0.75rem;">Category Breakdown</div>
+<div class="cat-grid" style="margin-bottom:1.75rem;">
+  {% for label, amt in cat_totals.items %}
+  <div class="cat-item">
+    <div class="cat-label">{{ label }}</div>
+    <div class="cat-amount">₹{{ amt|floatformat:2 }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Expense History -->
+<div class="section-title">History</div>
+
+{% if expenses %}
+<div class="card" style="padding:0;">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Note</th>
+          <th>Amount</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pe in expenses %}
+        <tr>
+          <td style="color:var(--text-muted);">{{ pe.date|date:"M d, Y" }}</td>
+          <td>
+            <span class="badge badge-warning">{{ pe.get_category_display }}</span>
+          </td>
+          <td>{{ pe.note|default:"—" }}</td>
+          <td><strong>₹{{ pe.amount|floatformat:2 }}</strong></td>
+          <td>
+            <form method="post" action="{% url 'delete_personal_expense' pe.pk %}"
+              class="confirm-delete delete-btn-form">
+              {% csrf_token %}
+              <button type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">💳</div>
+  <h3>No personal expenses yet</h3>
+  <p>Click "Add Expense" above to start tracking your spending.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Auto-open form if there are errors
+  {% if form.errors %}
+  $('#pe-form-section').show();
+  $('#toggle-pe-form .toggle-icon').text('▲');
+  {% endif %}
+</script>
+{% endblock %}

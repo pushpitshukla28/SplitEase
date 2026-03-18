@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block title %}{{ trip.name }} – SplitEase{% endblock %}
+
+{% block content %}
+<a href="{% url 'dashboard' %}" class="back-link">← Back to Dashboard</a>
+
+<div class="page-header">
+  <div>
+    <h1>🧳 {{ trip.name }}</h1>
+    {% if trip.description %}
+      <p>{{ trip.description }}</p>
+    {% endif %}
+  </div>
+  <a href="{% url 'add_expense' trip.pk %}" class="btn btn-success">+ Add Expense</a>
+</div>
+
+<!-- Summary stats -->
+<div class="stats-grid" style="margin-bottom:1.75rem;">
+  <div class="stat-card">
+    <div class="stat-label">Total Spent</div>
+    <div class="stat-value">₹{{ total|floatformat:2 }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Expenses</div>
+    <div class="stat-value">{{ expenses.count }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Members</div>
+    <div class="stat-value">{{ members.count }}</div>
+  </div>
+</div>
+
+<div class="trip-detail-grid">
+  <!-- Left: Expenses -->
+  <div>
+    <div class="section-title">💳 Expenses</div>
+
+    {% if expenses %}
+    <div class="card" style="padding:0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Paid By</th>
+              <th>Date</th>
+              <th>Split Among</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for expense in expenses %}
+            <tr>
+              <td><strong>{{ expense.description }}</strong></td>
+              <td><span class="badge badge-primary">₹{{ expense.amount|floatformat:2 }}</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                  <div class="avatar">{{ expense.paid_by.username|first|upper }}</div>
+                  {{ expense.paid_by.username }}
+                </div>
+              </td>
+              <td style="color:var(--text-muted);">{{ expense.date|date:"M d, Y" }}</td>
+              <td>
+                <div class="split-list">
+                  {% for split in expense.splits.all %}
+                    <span class="split-pill" title="₹{{ split.amount|floatformat:2 }}">
+                      {{ split.user.username }} (₹{{ split.amount|floatformat:2 }})
+                    </span>
+                  {% empty %}
+                    <span class="split-pill">—</span>
+                  {% endfor %}
+                </div>
+              </td>
+              <td>
+                {% if request.user == expense.paid_by or request.user == trip.created_by %}
+                <form method="post" action="{% url 'delete_expense' expense.pk %}" class="confirm-delete delete-btn-form">
+                  {% csrf_token %}
+                  <button type="submit">Delete</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🧾</div>
+      <h3>No expenses yet</h3>
+      <p>Add your first expense to get started.</p>
+      <br>
+      <a href="{% url 'add_expense' trip.pk %}" class="btn btn-success">+ Add Expense</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: Members + Balances -->
+  <div>
+    <!-- Members -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <h3>👥 Members</h3>
+      </div>
+      <div class="members-list">
+        {% for member in members %}
+          <div class="member-chip">
+            <div class="avatar">{{ member.username|first|upper }}</div>
+            {{ member.username }}
+            {% if member == trip.created_by %}
+              <span style="font-size:0.7rem;color:var(--primary);">admin</span>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Balances -->
+    <div class="card">
+      <div class="card-header">
+        <h3>⚖️ Who Owes Whom</h3>
+      </div>
+
+      {% if balance_list %}
+        {% for b in balance_list %}
+          {% if b.debtor == request.user %}
+            <div class="balance-item owes">
+              <span>You owe <strong>{{ b.creditor.username }}</strong></span>
+              <span class="amount">₹{{ b.amount|floatformat:2 }}</span>
+            </div>
+          {% elif b.creditor == request.user %}
+            <div class="balance-item owed">
+              <span><strong>{{ b.debtor.username }}</strong> owes you</span>
+              <span class="amount">₹{{ b.amount|floatformat:2 }}</span>
+            </div>
+          {% else %}
+            <div class="balance-item" style="background:#f8fafc;border:1px solid var(--border);">
+              <span><strong>{{ b.debtor.username }}</strong> → <strong>{{ b.creditor.username }}</strong></span>
+              <span class="amount" style="color:var(--text);">₹{{ b.amount|floatformat:2 }}</span>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--text-muted);font-size:0.9rem;text-align:center;padding:1rem 0;">
+          ✅ All settled up!
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

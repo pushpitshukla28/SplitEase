@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}SplitEase{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<nav class="navbar">
+  <a href="{% url 'dashboard' %}" class="navbar-brand">
+    <span class="logo-icon">💸</span> SplitEase
+  </a>
+  <ul class="navbar-nav">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li><a href="{% url 'create_trip' %}">+ New Trip</a></li>
+    <li><a href="{% url 'personal_expenses' %}">My Expenses</a></li>
+    <li>
+      <form method="post" action="{% url 'logout' %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn-logout">Logout</button>
+      </form>
+    </li>
+  </ul>
+</nav>
+{% endif %}
+
+<div class="{% block wrapper_class %}container{% endblock %}">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}">
+        <span>
+          {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}❌{% else %}ℹ️{% endif %}
+        </span>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% block content %}{% endblock %}
+</div>
+
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

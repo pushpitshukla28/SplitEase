@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard – SplitEase{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}!</h1>
+    <p>Here's your financial snapshot across all trips.</p>
+  </div>
+  <a href="{% url 'create_trip' %}" class="btn btn-primary">+ New Trip</a>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Trips</div>
+    <div class="stat-value">{{ trips.count }}</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">You Are Owed</div>
+    <div class="stat-value">₹{{ total_owed|floatformat:2 }}</div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-label">You Owe</div>
+    <div class="stat-value">₹{{ total_owe|floatformat:2 }}</div>
+  </div>
+  <div class="stat-card orange">
+    <div class="stat-label">Personal Spend</div>
+    <div class="stat-value">₹{{ personal_total|floatformat:2 }}</div>
+  </div>
+</div>
+
+<!-- Trips -->
+<div class="section-title">🧳 Your Trips</div>
+
+{% if trips %}
+  <div class="trips-grid">
+    {% for trip in trips %}
+    <a href="{% url 'trip_detail' trip.pk %}" class="trip-card">
+      <div class="trip-card-icon">🧳</div>
+      <h3>{{ trip.name }}</h3>
+      {% if trip.description %}
+        <p class="desc">{{ trip.description|truncatechars:60 }}</p>
+      {% else %}
+        <p class="desc" style="color:#cbd5e1;">No description</p>
+      {% endif %}
+      <div class="meta">
+        <span>👥 {{ trip.members.count }} member{{ trip.members.count|pluralize }}</span>
+        <span>💰 ₹{{ trip.total_expenses|floatformat:2 }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🗺️</div>
+    <h3>No trips yet</h3>
+    <p>Create your first trip to start splitting expenses with friends.</p>
+    <br>
+    <a href="{% url 'create_trip' %}" class="btn btn-primary">Create a Trip</a>
+  </div>
+{% endif %}
+
+<!-- Quick link -->
+<div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+  <div class="section-title" style="margin:0;">📊 Personal Expenses</div>
+  <a href="{% url 'personal_expenses' %}" class="btn btn-outline btn-sm">View All →</a>
+</div>
+{% endblock %}
