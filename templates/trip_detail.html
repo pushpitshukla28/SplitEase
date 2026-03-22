@@ -71,7 +71,7 @@
                   {{ expense.paid_by.username }}
                 </div>
               </td>
-              <td style="color:var(--text-muted);">{{ expense.date|date:"M d, Y" }}</td>
+              <td style="color:var(--text-muted);white-space:nowrap;">{{ expense.date|date:"d M Y" }}</td>
               <td>
                 <div class="split-list">
                   {% for split in expense.splits.all %}

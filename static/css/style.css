@@ -454,7 +454,16 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
+}
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 1.1em;
+  background: linear-gradient(to bottom, var(--primary), var(--primary-light));
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 /* ===== CATEGORY BREAKDOWN ===== */

@@ -62,9 +62,19 @@
   </div>
 {% endif %}
 
-<!-- Quick link -->
-<div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
-  <div class="section-title" style="margin:0;">Personal Expenses</div>
-  <a href="{% url 'personal_expenses' %}" class="btn btn-outline btn-sm">View All →</a>
+<!-- Personal Expenses summary -->
+<div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+    <div class="section-title" style="margin:0;">Personal Expenses</div>
+    <a href="{% url 'personal_expenses' %}" class="btn btn-outline btn-sm">View All →</a>
+  </div>
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;background:linear-gradient(135deg,#f8f7ff,#f0f4ff);">
+    <div>
+      <div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Total Tracked Spend</div>
+      <div style="font-size:2rem;font-weight:800;color:var(--primary);margin-top:0.2rem;">₹{{ personal_total|floatformat:2 }}</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-top:0.2rem;">across all your personal expenses</div>
+    </div>
+    <a href="{% url 'personal_expenses' %}" class="btn btn-primary">+ Log Expense</a>
+  </div>
 </div>
 {% endblock %}

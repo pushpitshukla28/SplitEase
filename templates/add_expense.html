@@ -99,6 +99,7 @@
 
 {% block extra_js %}
 <script>
-  document.getElementById('id_date').setAttribute('max', new Date().toISOString().split('T')[0]);
+  var t = new Date(); var pad = function(n){return String(n).padStart(2,'0');};
+  document.getElementById('id_date').setAttribute('max', t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate()));
 </script>
 {% endblock %}
