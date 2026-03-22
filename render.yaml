@@ -2,14 +2,26 @@ services:
   - type: web
     name: splitease
     runtime: python
-    buildCommand: "./build.sh"
-    startCommand: "gunicorn splitease.wsgi:application"
+    buildCommand: "bash build.sh"
+    startCommand: "gunicorn splitease.wsgi:application --bind 0.0.0.0:$PORT --workers 2"
     envVars:
       - key: SECRET_KEY
-        generateValue: true        # Render auto-generates a secure key
+        generateValue: true
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: ".onrender.com"     # Render sets the real hostname automatically
+        value: ".onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: splitease-db
+          property: connectionString
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://*.onrender.com"
       - key: PYTHON_VERSION
         value: "3.13.0"
+
+databases:
+  - name: splitease-db
+    databaseName: splitease
+    user: splitease
+    plan: free
