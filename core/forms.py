@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Trip, Expense, PersonalExpense, CATEGORY_CHOICES
+from .models import Trip, Expense, PersonalExpense, CATEGORY_CHOICES, get_friends
 
 
 class RegisterForm(UserCreationForm):
@@ -28,7 +28,8 @@ class TripForm(forms.ModelForm):
         queryset=User.objects.none(),
         widget=forms.CheckboxSelectMultiple,
         required=False,
-        label='Invite Members'
+        label='Invite Friends',
+        help_text='Only your friends appear here. Add friends from the Friends page first.'
     )
 
     class Meta:
@@ -42,7 +43,7 @@ class TripForm(forms.ModelForm):
         current_user = kwargs.pop('current_user', None)
         super().__init__(*args, **kwargs)
         if current_user:
-            self.fields['members'].queryset = User.objects.exclude(pk=current_user.pk)
+            self.fields['members'].queryset = get_friends(current_user)
 
 
 class ExpenseForm(forms.ModelForm):

@@ -7,7 +7,7 @@ from django.db import models as db_models
 from decimal import Decimal
 from collections import defaultdict
 
-from .models import Trip, TripMember, Expense, ExpenseSplit, PersonalExpense
+from .models import Trip, TripMember, Expense, ExpenseSplit, PersonalExpense, FriendRequest, get_friends
 from .forms import RegisterForm, TripForm, ExpenseForm, PersonalExpenseForm
 
 
@@ -224,6 +224,70 @@ def personal_expenses(request):
         'cat_totals': cat_totals,
     }
     return render(request, 'personal_expenses.html', context)
+
+
+@login_required
+def friends_view(request):
+    query = request.GET.get('q', '').strip()
+    search_results = []
+    if query:
+        friend_ids = get_friends(request.user).values_list('pk', flat=True)
+        sent_ids = FriendRequest.objects.filter(from_user=request.user).values_list('to_user_id', flat=True)
+        received_ids = FriendRequest.objects.filter(to_user=request.user).values_list('from_user_id', flat=True)
+        exclude_ids = set(list(friend_ids) + list(sent_ids) + list(received_ids) + [request.user.pk])
+        search_results = User.objects.filter(username__icontains=query).exclude(pk__in=exclude_ids)
+
+    friends = get_friends(request.user)
+    pending_received = FriendRequest.objects.filter(to_user=request.user, accepted=False).select_related('from_user')
+    pending_sent = FriendRequest.objects.filter(from_user=request.user, accepted=False).select_related('to_user')
+
+    context = {
+        'friends': friends,
+        'pending_received': pending_received,
+        'pending_sent': pending_sent,
+        'search_results': search_results,
+        'query': query,
+    }
+    return render(request, 'friends.html', context)
+
+
+@login_required
+def send_friend_request(request, user_id):
+    to_user = get_object_or_404(User, pk=user_id)
+    if to_user != request.user:
+        _, created = FriendRequest.objects.get_or_create(from_user=request.user, to_user=to_user)
+        if created:
+            messages.success(request, f'Friend request sent to {to_user.username}!')
+        else:
+            messages.info(request, f'You already sent a request to {to_user.username}.')
+    return redirect('friends')
+
+
+@login_required
+def accept_friend_request(request, request_id):
+    freq = get_object_or_404(FriendRequest, pk=request_id, to_user=request.user)
+    freq.accepted = True
+    freq.save()
+    messages.success(request, f'You are now friends with {freq.from_user.username}!')
+    return redirect('friends')
+
+
+@login_required
+def decline_friend_request(request, request_id):
+    freq = get_object_or_404(FriendRequest, pk=request_id, to_user=request.user)
+    name = freq.from_user.username
+    freq.delete()
+    messages.info(request, f'Friend request from {name} declined.')
+    return redirect('friends')
+
+
+@login_required
+def remove_friend(request, user_id):
+    other = get_object_or_404(User, pk=user_id)
+    FriendRequest.objects.filter(from_user=request.user, to_user=other, accepted=True).delete()
+    FriendRequest.objects.filter(from_user=other, to_user=request.user, accepted=True).delete()
+    messages.info(request, f'{other.username} removed from friends.')
+    return redirect('friends')
 
 
 @login_required

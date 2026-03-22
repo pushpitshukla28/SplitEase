@@ -67,6 +67,26 @@ CATEGORY_CHOICES = [
 ]
 
 
+class FriendRequest(models.Model):
+    from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_friend_requests')
+    to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_friend_requests')
+    created_at = models.DateTimeField(auto_now_add=True)
+    accepted = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('from_user', 'to_user')
+
+    def __str__(self):
+        return f"{self.from_user.username} → {self.to_user.username}"
+
+
+def get_friends(user):
+    """Return a queryset of users who are mutual friends with the given user."""
+    from_ids = FriendRequest.objects.filter(from_user=user, accepted=True).values_list('to_user_id', flat=True)
+    to_ids = FriendRequest.objects.filter(to_user=user, accepted=True).values_list('from_user_id', flat=True)
+    return User.objects.filter(pk__in=list(from_ids) + list(to_ids))
+
+
 class PersonalExpense(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='personal_expenses')
     amount = models.DecimalField(max_digits=10, decimal_places=2)

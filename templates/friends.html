@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}Friends – SplitEase{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Friends</h1>
+    <p>Add friends to invite them to trips. Only your friends are visible to you.</p>
+  </div>
+</div>
+
+<!-- Search -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <h3 class="section-title">🔍 Find People</h3>
+  <form method="get" style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+    <input
+      type="text"
+      name="q"
+      value="{{ query }}"
+      placeholder="Search by username..."
+      class="form-control"
+      style="max-width:320px;"
+    />
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if query %}<a href="{% url 'friends' %}" class="btn btn-outline">Clear</a>{% endif %}
+  </form>
+
+  {% if query %}
+    <div style="margin-top:1.25rem;">
+      {% if search_results %}
+        <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:0.75rem;">Results for "{{ query }}"</p>
+        {% for user in search_results %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <div class="avatar">{{ user.username|first|upper }}</div>
+              <div>
+                <div style="font-weight:600;">{{ user.username }}</div>
+                {% if user.first_name %}<div style="font-size:0.82rem;color:var(--text-muted);">{{ user.first_name }} {{ user.last_name }}</div>{% endif %}
+              </div>
+            </div>
+            <form method="post" action="{% url 'send_friend_request' user.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-primary btn-sm">+ Add Friend</button>
+            </form>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-top:0.75rem;">No users found for "{{ query }}".</p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Pending requests received -->
+{% if pending_received %}
+<div class="card" style="margin-bottom:1.5rem;border-left:4px solid var(--primary);">
+  <h3 class="section-title">📬 Friend Requests ({{ pending_received|length }})</h3>
+  {% for req in pending_received %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div class="avatar">{{ req.from_user.username|first|upper }}</div>
+        <div>
+          <div style="font-weight:600;">{{ req.from_user.username }}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);">wants to be your friend</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem;">
+        <form method="post" action="{% url 'accept_friend_request' req.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-sm">✓ Accept</button>
+        </form>
+        <form method="post" action="{% url 'decline_friend_request' req.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline btn-sm">✗ Decline</button>
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Friends list -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <h3 class="section-title">👥 My Friends ({{ friends|length }})</h3>
+  {% if friends %}
+    {% for friend in friends %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div class="avatar">{{ friend.username|first|upper }}</div>
+          <div>
+            <div style="font-weight:600;">{{ friend.username }}</div>
+            {% if friend.first_name %}<div style="font-size:0.82rem;color:var(--text-muted);">{{ friend.first_name }} {{ friend.last_name }}</div>{% endif %}
+          </div>
+        </div>
+        <form method="post" action="{% url 'remove_friend' friend.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm" style="background:#f1f5f9;color:var(--text-muted);" onclick="return confirm('Remove {{ friend.username }} from friends?')">Remove</button>
+        </form>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🤝</div>
+      <h3>No friends yet</h3>
+      <p>Search for people above and send them a friend request.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Sent requests (pending) -->
+{% if pending_sent %}
+<div class="card">
+  <h3 class="section-title" style="color:var(--text-muted);">⏳ Sent Requests</h3>
+  {% for req in pending_sent %}
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+      <div class="avatar" style="background:var(--text-muted);">{{ req.to_user.username|first|upper }}</div>
+      <div style="font-weight:500;color:var(--text-muted);">{{ req.to_user.username }}</div>
+      <span class="badge badge-muted" style="margin-left:auto;">Pending</span>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

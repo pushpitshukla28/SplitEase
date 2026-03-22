@@ -20,6 +20,14 @@
     <li><a href="{% url 'create_trip' %}">+ New Trip</a></li>
     <li><a href="{% url 'personal_expenses' %}">My Expenses</a></li>
     <li>
+      <a href="{% url 'friends' %}" style="position:relative;">
+        Friends
+        {% if pending_friend_requests_count %}
+          <span style="position:absolute;top:-6px;right:-10px;background:#ef4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:0.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ pending_friend_requests_count }}</span>
+        {% endif %}
+      </a>
+    </li>
+    <li>
       <form method="post" action="{% url 'logout' %}" style="display:inline;">
         {% csrf_token %}
         <button type="submit" class="btn-logout">Logout</button>
