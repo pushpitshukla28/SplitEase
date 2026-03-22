@@ -11,6 +11,12 @@ from .models import Trip, TripMember, Expense, ExpenseSplit, PersonalExpense
 from .forms import RegisterForm, TripForm, ExpenseForm, PersonalExpenseForm
 
 
+def landing_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'landing.html')
+
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
