@@ -8,7 +8,7 @@ from django.db import models as db_models
 from decimal import Decimal
 from collections import defaultdict
 
-from .models import Trip, TripMember, Expense, ExpenseSplit, PersonalExpense, FriendRequest, get_friends
+from .models import Trip, TripMember, Expense, ExpenseSplit, PersonalExpense, FriendRequest, Settlement, get_friends
 from .forms import RegisterForm, TripForm, ExpenseForm, PersonalExpenseForm
 
 
@@ -117,6 +117,10 @@ def calculate_balances(trip):
         net[expense.paid_by] += expense.amount
         for split in expense.splits.all():
             net[split.user] -= split.amount
+    # Settlements: payer gets credit back, payee's credit reduces
+    for s in trip.settlements.all():
+        net[s.payer] += s.amount
+        net[s.payee] -= s.amount
 
     debtors = sorted([(u, -amt) for u, amt in net.items() if amt < 0], key=lambda x: x[1], reverse=True)
     creditors = sorted([(u, amt) for u, amt in net.items() if amt > 0], key=lambda x: x[1], reverse=True)
@@ -157,14 +161,37 @@ def trip_detail(request, pk):
         for (debtor, creditor), amount in balances.items()
     ]
 
+    settlements = trip.settlements.select_related('payer', 'payee').order_by('-created_at')
     context = {
         'trip': trip,
         'expenses': expenses,
         'members': members,
         'balance_list': balance_list,
         'total': trip.total_expenses(),
+        'settlements': settlements,
     }
     return render(request, 'trip_detail.html', context)
+
+
+@login_required
+def settle_up(request, trip_pk):
+    trip = get_object_or_404(Trip, pk=trip_pk)
+    if not TripMember.objects.filter(trip=trip, user=request.user).exists():
+        return redirect('dashboard')
+    if request.method == 'POST':
+        payee_id = request.POST.get('payee_id')
+        amount_str = request.POST.get('amount', '0')
+        payee = get_object_or_404(User, pk=payee_id)
+        try:
+            amount = Decimal(amount_str)
+            if amount > 0:
+                Settlement.objects.create(trip=trip, payer=request.user, payee=payee, amount=amount)
+                messages.success(request, f'Settlement of ₹{amount:.2f} recorded. {payee.username} has been notified.')
+            else:
+                messages.error(request, 'Amount must be greater than 0.')
+        except Exception:
+            messages.error(request, 'Invalid amount entered.')
+    return redirect('trip_detail', pk=trip_pk)
 
 
 @login_required

@@ -67,6 +67,17 @@ CATEGORY_CHOICES = [
 ]
 
 
+class Settlement(models.Model):
+    trip = models.ForeignKey('Trip', on_delete=models.CASCADE, related_name='settlements')
+    payer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='settlements_paid')
+    payee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='settlements_received')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.payer.username} → {self.payee.username} ₹{self.amount} ({self.trip.name})"
+
+
 class FriendRequest(models.Model):
     from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_friend_requests')
     to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_friend_requests')

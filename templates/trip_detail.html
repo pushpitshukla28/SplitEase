@@ -137,9 +137,48 @@
       {% if balance_list %}
         {% for b in balance_list %}
           {% if b.debtor == request.user %}
-            <div class="balance-item owes">
-              <span>You owe <strong>{{ b.creditor.username }}</strong></span>
-              <span class="amount">₹{{ b.amount|floatformat:2 }}</span>
+            <div class="balance-item owes" style="flex-direction:column;align-items:flex-start;gap:0.5rem;">
+              <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                <span>You owe <strong>{{ b.creditor.username }}</strong></span>
+                <span class="amount">₹{{ b.amount|floatformat:2 }}</span>
+              </div>
+              <!-- Settle Up panel -->
+              <details style="width:100%;">
+                <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--primary);list-style:none;display:flex;align-items:center;gap:0.35rem;">
+                  ↳ Settle Up
+                </summary>
+                <div style="margin-top:0.75rem;padding:1rem;background:#f8fafc;border-radius:10px;border:1px solid var(--border);">
+                  <form method="post" action="{% url 'settle_up' trip.pk %}" id="settle-form-{{ b.creditor.pk }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="payee_id" value="{{ b.creditor.pk }}">
+                    <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;margin-bottom:0.75rem;">
+                      <div>
+                        <label style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Amount (₹)</label>
+                        <input type="number" name="amount" id="amt-{{ b.creditor.pk }}"
+                          value="{{ b.amount }}" step="0.01" min="0.01" max="{{ b.amount }}"
+                          class="form-control" style="width:130px;margin-top:0.2rem;">
+                      </div>
+                      <div style="margin-top:1.2rem;">
+                        <button type="submit" class="btn btn-success btn-sm">✓ Mark as Paid</button>
+                      </div>
+                    </div>
+                  </form>
+                  <!-- UPI Section -->
+                  <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.25rem;">
+                    <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:0.5rem;">Pay via UPI app (GPay / PhonePe / Paytm)</div>
+                    <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+                      <input type="text" id="upi-{{ b.creditor.pk }}"
+                        placeholder="{{ b.creditor.username }}'s UPI ID"
+                        class="form-control" style="width:190px;">
+                      <button type="button" class="btn btn-outline btn-sm"
+                        onclick="openUPI('{{ b.creditor.pk }}','{{ b.creditor.username }}')">
+                        Open UPI App →
+                      </button>
+                    </div>
+                    <div style="font-size:0.74rem;color:var(--text-muted);margin-top:0.4rem;">Works on mobile. After paying, click "Mark as Paid" above.</div>
+                  </div>
+                </div>
+              </details>
             </div>
           {% elif b.creditor == request.user %}
             <div class="balance-item owed">
@@ -154,11 +193,47 @@
           {% endif %}
         {% endfor %}
       {% else %}
-        <p style="color:var(--text-muted);font-size:0.9rem;text-align:center;padding:1rem 0;">
-          ✅ All settled up!
+        <p style="color:var(--secondary);font-size:0.9rem;text-align:center;padding:1rem 0;font-weight:600;">
+          All settled up!
         </p>
       {% endif %}
     </div>
+
+    <!-- Settlement History -->
+    {% if settlements %}
+    <div class="card" style="margin-top:1.25rem;">
+      <div class="card-header"><h3>Settlement History</h3></div>
+      {% for s in settlements %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;">
+        <span>
+          <strong>{{ s.payer.username }}</strong>
+          <span style="color:var(--text-muted);"> paid </span>
+          <strong>{{ s.payee.username }}</strong>
+        </span>
+        <span style="font-weight:700;color:var(--secondary);">₹{{ s.amount|floatformat:2 }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
   </div>
 </div>
+
+{% block extra_js %}
+<script>
+function openUPI(creditorPk, creditorName) {
+  var upiId = document.getElementById('upi-' + creditorPk).value.trim();
+  var amount = document.getElementById('amt-' + creditorPk).value;
+  if (!upiId) {
+    alert('Please enter ' + creditorName + '\'s UPI ID (e.g. name@upi or phone@paytm)');
+    return;
+  }
+  var link = 'upi://pay?pa=' + encodeURIComponent(upiId)
+    + '&pn=' + encodeURIComponent(creditorName)
+    + '&am=' + encodeURIComponent(amount)
+    + '&cu=INR&tn=' + encodeURIComponent('SplitEase settlement');
+  window.location.href = link;
+}
+</script>
+{% endblock %}
 {% endblock %}
