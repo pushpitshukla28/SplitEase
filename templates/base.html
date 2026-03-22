@@ -13,11 +13,10 @@
 {% if user.is_authenticated %}
 <nav class="navbar">
   <a href="{% url 'dashboard' %}" class="navbar-brand">
-    <span class="logo-icon">💸</span> SplitEase
+    <span class="logo-mark">SE</span> SplitEase
   </a>
   <ul class="navbar-nav">
     <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-    <li><a href="{% url 'create_trip' %}">+ New Trip</a></li>
     <li><a href="{% url 'personal_expenses' %}">My Expenses</a></li>
     <li>
       <a href="{% url 'friends' %}" style="position:relative;">
@@ -53,6 +52,16 @@
 </div>
 
 <script src="{% static 'js/main.js' %}"></script>
+<script>
+  // Floating navbar on scroll
+  (function() {
+    var nav = document.querySelector('.navbar');
+    if (!nav) return;
+    window.addEventListener('scroll', function() {
+      nav.classList.toggle('scrolled', window.scrollY > 10);
+    }, { passive: true });
+  })();
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>📊 My Personal Expenses</h1>
+    <h1>My Personal Expenses</h1>
     <p>Track your individual spending.</p>
   </div>
   <button id="toggle-pe-form" class="btn btn-primary">
@@ -83,6 +83,19 @@
 </div>
 {% endif %}
 
+<!-- Monthly Summary -->
+{% if monthly_totals %}
+<div class="section-title" style="margin-bottom:0.75rem;">Monthly Summary</div>
+<div class="cat-grid" style="margin-bottom:1.75rem;">
+  {% for row in monthly_totals %}
+  <div class="cat-item">
+    <div class="cat-label">{{ row.month|date:"M Y" }}</div>
+    <div class="cat-amount">₹{{ row.total|floatformat:2 }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 <!-- Expense History -->
 <div class="section-title">History</div>
 
@@ -122,10 +135,13 @@
   </div>
 </div>
 {% else %}
-<div class="empty-state">
-  <div class="empty-icon">💳</div>
-  <h3>No personal expenses yet</h3>
-  <p>Click "Add Expense" above to start tracking your spending.</p>
+<div class="empty-state" style="border:2px dashed var(--border);border-radius:var(--radius);padding:3rem 1rem;">
+  <h3>No expenses logged yet</h3>
+  <p>Start tracking your spending — click <strong>+ Add Expense</strong> above to add your first entry.</p>
+  <br>
+  <button onclick="document.getElementById('pe-form-section').style.display='block';window.scrollTo({top:0,behavior:'smooth'});" class="btn btn-primary">
+    + Add Your First Expense
+  </button>
 </div>
 {% endif %}
 {% endblock %}
@@ -137,5 +153,7 @@
   $('#pe-form-section').show();
   $('#toggle-pe-form .toggle-icon').text('▲');
   {% endif %}
+  // Prevent future dates
+  document.getElementById('id_date').setAttribute('max', new Date().toISOString().split('T')[0]);
 </script>
 {% endblock %}

@@ -96,3 +96,9 @@
   </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('id_date').setAttribute('max', new Date().toISOString().split('T')[0]);
+</script>
+{% endblock %}

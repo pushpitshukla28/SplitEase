@@ -6,12 +6,23 @@
 
 <div class="page-header">
   <div>
-    <h1>🧳 {{ trip.name }}</h1>
+    <h1>{{ trip.name }}</h1>
     {% if trip.description %}
       <p>{{ trip.description }}</p>
     {% endif %}
   </div>
-  <a href="{% url 'add_expense' trip.pk %}" class="btn btn-success">+ Add Expense</a>
+  <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+    <a href="{% url 'add_expense' trip.pk %}" class="btn btn-success">+ Add Expense</a>
+    {% if request.user == trip.created_by %}
+    <form method="post" action="{% url 'delete_trip' trip.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger"
+        onclick="return confirm('Delete \'{{ trip.name }}\' and all its expenses? This cannot be undone.')">
+        Delete Trip
+      </button>
+    </form>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Summary stats -->
@@ -33,7 +44,7 @@
 <div class="trip-detail-grid">
   <!-- Left: Expenses -->
   <div>
-    <div class="section-title">💳 Expenses</div>
+    <div class="section-title">Expenses</div>
 
     {% if expenses %}
     <div class="card" style="padding:0;">
@@ -102,7 +113,7 @@
     <!-- Members -->
     <div class="card" style="margin-bottom:1.25rem;">
       <div class="card-header">
-        <h3>👥 Members</h3>
+        <h3>Members</h3>
       </div>
       <div class="members-list">
         {% for member in members %}
@@ -120,7 +131,7 @@
     <!-- Balances -->
     <div class="card">
       <div class="card-header">
-        <h3>⚖️ Who Owes Whom</h3>
+        <h3>Balances</h3>
       </div>
 
       {% if balance_list %}

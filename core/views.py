@@ -80,6 +80,20 @@ def dashboard(request):
 
 
 @login_required
+def delete_trip(request, pk):
+    trip = get_object_or_404(Trip, pk=pk)
+    if request.user != trip.created_by:
+        messages.error(request, 'Only the trip creator can delete a trip.')
+        return redirect('trip_detail', pk=pk)
+    if request.method == 'POST':
+        name = trip.name
+        trip.delete()
+        messages.success(request, f'Trip "{name}" deleted.')
+        return redirect('dashboard')
+    return redirect('trip_detail', pk=pk)
+
+
+@login_required
 def create_trip(request):
     if request.method == 'POST':
         form = TripForm(request.POST, current_user=request.user)
@@ -218,11 +232,21 @@ def personal_expenses(request):
         if amt > 0:
             cat_totals[label] = amt
 
+    from django.db.models.functions import TruncMonth
+    monthly_totals = (
+        expenses
+        .annotate(month=TruncMonth('date'))
+        .values('month')
+        .annotate(total=db_models.Sum('amount'))
+        .order_by('-month')[:12]
+    )
+
     context = {
         'form': form,
         'expenses': expenses,
         'total': total,
         'cat_totals': cat_totals,
+        'monthly_totals': monthly_totals,
     }
     return render(request, 'personal_expenses.html', context)
 

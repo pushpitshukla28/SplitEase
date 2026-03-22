@@ -31,13 +31,15 @@
 </div>
 
 <!-- Trips -->
-<div class="section-title">🧳 Your Trips</div>
+<div class="section-title">Your Trips</div>
 
 {% if trips %}
   <div class="trips-grid">
     {% for trip in trips %}
     <a href="{% url 'trip_detail' trip.pk %}" class="trip-card">
-      <div class="trip-card-icon">🧳</div>
+      <div class="trip-card-icon" style="font-size:1rem;font-weight:800;letter-spacing:-0.5px;">
+        {{ trip.name|slice:":2"|upper }}
+      </div>
       <h3>{{ trip.name }}</h3>
       {% if trip.description %}
         <p class="desc">{{ trip.description|truncatechars:60 }}</p>
@@ -45,25 +47,24 @@
         <p class="desc" style="color:#cbd5e1;">No description</p>
       {% endif %}
       <div class="meta">
-        <span>👥 {{ trip.members.count }} member{{ trip.members.count|pluralize }}</span>
-        <span>💰 ₹{{ trip.total_expenses|floatformat:2 }}</span>
+        <span>{{ trip.members.count }} member{{ trip.members.count|pluralize }}</span>
+        <span>₹{{ trip.total_expenses|floatformat:2 }}</span>
       </div>
     </a>
     {% endfor %}
   </div>
 {% else %}
   <div class="empty-state">
-    <div class="empty-icon">🗺️</div>
     <h3>No trips yet</h3>
     <p>Create your first trip to start splitting expenses with friends.</p>
     <br>
-    <a href="{% url 'create_trip' %}" class="btn btn-primary">Create a Trip</a>
+    <a href="{% url 'create_trip' %}" class="btn btn-primary">+ Create a Trip</a>
   </div>
 {% endif %}
 
 <!-- Quick link -->
 <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
-  <div class="section-title" style="margin:0;">📊 Personal Expenses</div>
+  <div class="section-title" style="margin:0;">Personal Expenses</div>
   <a href="{% url 'personal_expenses' %}" class="btn btn-outline btn-sm">View All →</a>
 </div>
 {% endblock %}
