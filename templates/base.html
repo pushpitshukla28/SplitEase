@@ -25,6 +25,32 @@
 </div>
 
 {% if user.is_authenticated %}
+<!-- Bottom nav for mobile -->
+<nav class="bottom-nav">
+  <a href="{% url 'dashboard' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+    <span class="bottom-nav-icon">🏠</span>
+    <span>Home</span>
+  </a>
+  <a href="{% url 'personal_expenses' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'personal_expenses' %}active{% endif %}">
+    <span class="bottom-nav-icon">💰</span>
+    <span>Expenses</span>
+  </a>
+  <a href="{% url 'friends' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'friends' %}active{% endif %}" style="position:relative;">
+    <span class="bottom-nav-icon">👥</span>
+    <span>Friends</span>
+    {% if pending_friend_requests_count %}
+      <span style="position:absolute;top:0.4rem;right:calc(50% - 1.1rem);background:#8EB69B;color:#051F20;border-radius:50%;width:14px;height:14px;font-size:0.58rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ pending_friend_requests_count }}</span>
+    {% endif %}
+  </a>
+  <form method="post" action="{% url 'logout' %}" style="flex:1;display:contents;">
+    {% csrf_token %}
+    <button type="submit" class="bottom-nav-item" style="width:100%;font-family:inherit;">
+      <span class="bottom-nav-icon">🚪</span>
+      <span>Logout</span>
+    </button>
+  </form>
+</nav>
+
 <nav class="navbar">
   <a href="{% url 'dashboard' %}" class="navbar-brand">
     <span class="logo-mark">
