@@ -165,17 +165,28 @@
                   </form>
                   <!-- UPI Section -->
                   <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.25rem;">
-                    <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:0.5rem;">Pay via UPI app (GPay / PhonePe / Paytm)</div>
-                    <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+                    <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:0.6rem;">Pay via UPI (GPay / PhonePe / Paytm)</div>
+                    <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;">
                       <input type="text" id="upi-{{ b.creditor.pk }}"
                         placeholder="{{ b.creditor.username }}'s UPI ID"
-                        class="form-control" style="width:190px;">
-                      <button type="button" class="btn btn-outline btn-sm"
-                        onclick="openUPI('{{ b.creditor.pk }}','{{ b.creditor.username }}')">
-                        Open UPI App →
+                        class="form-control" style="flex:1;">
+                      <button type="button" class="btn btn-outline btn-sm" style="flex-shrink:0;"
+                        onclick="copyUPI('{{ b.creditor.pk }}')">
+                        Copy ID
                       </button>
                     </div>
-                    <div style="font-size:0.74rem;color:var(--text-muted);margin-top:0.4rem;">Opens UPI app with payee pre-filled. Enter ₹{{ b.amount|floatformat:2 }} manually, then click "Mark as Paid" above.</div>
+                    <div style="display:flex;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;background:#EDF7EF;border-radius:8px;border:1px solid var(--border);margin-bottom:0.5rem;">
+                      <span style="font-size:0.82rem;color:var(--text-muted);">Amount to pay:</span>
+                      <strong style="font-size:0.95rem;color:var(--text);">₹{{ b.amount|floatformat:2 }}</strong>
+                      <button type="button" class="btn btn-outline btn-sm" style="margin-left:auto;padding:0.25rem 0.65rem;"
+                        onclick="copyText('{{ b.amount }}')">
+                        Copy ₹
+                      </button>
+                    </div>
+                    <div style="font-size:0.74rem;color:var(--text-muted);line-height:1.6;">
+                      1. Copy the UPI ID → open your UPI app → paste &amp; send<br>
+                      2. Come back and click <strong>"Mark as Paid"</strong> above
+                    </div>
                   </div>
                 </div>
               </details>
@@ -221,17 +232,28 @@
 
 {% block extra_js %}
 <script>
-function openUPI(creditorPk, creditorName) {
+function copyUPI(creditorPk) {
   var upiId = document.getElementById('upi-' + creditorPk).value.trim();
-  var amount = document.getElementById('amt-' + creditorPk).value;
-  if (!upiId) {
-    alert('Please enter ' + creditorName + '\'s UPI ID (e.g. name@upi or phone@paytm)');
-    return;
-  }
-  var link = 'upi://pay?pa=' + encodeURIComponent(upiId)
-    + '&pn=' + encodeURIComponent(creditorName)
-    + '&cu=INR&tn=' + encodeURIComponent('SplitEase settlement - ₹' + amount);
-  window.location.href = link;
+  if (!upiId) { alert('Please enter the UPI ID first.'); return; }
+  var btn = event.target;
+  navigator.clipboard.writeText(upiId).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy ID'; }, 2000);
+  }).catch(function() {
+    var el = document.getElementById('upi-' + creditorPk);
+    el.select(); document.execCommand('copy');
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy ID'; }, 2000);
+  });
+}
+function copyText(text) {
+  var btn = event.target;
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy ₹'; }, 2000);
+  }).catch(function() {
+    alert('Amount: ₹' + text);
+  });
 }
 </script>
 {% endblock %}
