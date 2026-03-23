@@ -118,5 +118,5 @@ SIMPLE_JWT = {
 }
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
-CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:8081,http://127.0.0.1:8081', cast=Csv())
+# Allow all origins for the mobile app (Expo dev server IPs vary per device)
+CORS_ALLOW_ALL_ORIGINS = True
