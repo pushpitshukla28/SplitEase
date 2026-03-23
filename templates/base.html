@@ -5,11 +5,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}SplitEase{% endblock %}</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23235347'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-size='17' fill='%23DAF1DE' font-family='system-ui%2Csans-serif'%3E%E2%82%B9%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="{% static 'icons/icon.svg' %}" />
+  <link rel="apple-touch-icon" href="{% static 'icons/icon.svg' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#235347">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SplitEase">
   <link rel="stylesheet" href="{% static 'css/style.css' %}" />
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
+
+<!-- PWA install banner (hidden until browser fires beforeinstallprompt) -->
+<div id="pwa-install-banner" style="display:none;align-items:center;justify-content:center;gap:0.75rem;background:#163832;color:#DAF1DE;padding:0.55rem 1.25rem;font-size:0.85rem;font-weight:500;flex-wrap:wrap;">
+  <span>📱 Install SplitEase as an app on your phone</span>
+  <button onclick="installPWA()" style="background:#235347;color:#DAF1DE;border:1px solid rgba(218,241,222,0.3);border-radius:50px;padding:0.3rem 0.9rem;font-size:0.82rem;font-weight:600;cursor:pointer;">Install</button>
+  <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:rgba(218,241,222,0.5);cursor:pointer;font-size:1rem;padding:0 0.25rem;">✕</button>
+</div>
 
 {% if user.is_authenticated %}
 <nav class="navbar">
@@ -69,6 +82,35 @@
       nav.classList.toggle('scrolled', window.scrollY > 10);
     }, { passive: true });
   })();
+
+  // PWA: Register service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').catch(function() {});
+    });
+  }
+
+  // PWA: Show install banner
+  var deferredPrompt;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    var banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'flex';
+  });
+  function installPWA() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function() {
+      deferredPrompt = null;
+      var banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+    });
+  }
+  window.addEventListener('appinstalled', function() {
+    var banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+  });
 </script>
 {% block extra_js %}{% endblock %}
 </body>
