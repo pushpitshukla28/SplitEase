@@ -92,13 +92,14 @@
               <input type="number" name="custom_{{ choice.data.value }}"
                 class="custom-amt form-control"
                 style="display:none;width:110px;text-align:right;"
-                step="0.01" min="0" placeholder="₹0.00">
+                step="0.01" min="0" placeholder="their share">
             </label>
           {% endfor %}
         </div>
 
         <!-- Custom split total feedback -->
         <div id="custom-total-bar" style="display:none;margin-top:0.6rem;padding:0.6rem 0.85rem;border-radius:8px;font-size:0.85rem;font-weight:600;background:#EDF7EF;border:1px solid var(--border);">
+          <div style="font-size:0.75rem;color:var(--text-muted);font-weight:500;margin-bottom:0.3rem;">Enter each person's share — amounts must add up to the total.</div>
           Assigned: ₹<span id="custom-total">0.00</span> &nbsp;/&nbsp; Total: ₹<span id="expense-total-display">0.00</span>
           <span id="total-status" style="margin-left:0.5rem;"></span>
         </div>
@@ -109,7 +110,7 @@
       </div>
 
       <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
-        <button type="submit" class="btn btn-success">Save Expense</button>
+        <button type="submit" id="save-btn" class="btn btn-success">Save Expense</button>
         <a href="{% url 'trip_detail' trip.pk %}" class="btn btn-outline">Cancel</a>
       </div>
     </form>
@@ -123,18 +124,24 @@
   var t = new Date(); var pad = function(n){return String(n).padStart(2,'0');};
   document.getElementById('id_date').setAttribute('max', t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate()));
 
-  // ---- Split type toggle ----
-  var equalRadio  = document.getElementById('split-equal');
-  var customRadio = document.getElementById('split-custom');
+  var equalRadio    = document.getElementById('split-equal');
+  var customRadio   = document.getElementById('split-custom');
   var selectAllWrap = document.getElementById('select-all-wrap');
   var customTotalBar = document.getElementById('custom-total-bar');
   var customTotalSpan = document.getElementById('custom-total');
   var expenseTotalSpan = document.getElementById('expense-total-display');
-  var totalStatus = document.getElementById('total-status');
-  var amountInput = document.getElementById('id_amount');
+  var totalStatus   = document.getElementById('total-status');
+  var amountInput   = document.getElementById('id_amount');
+  var saveBtn       = document.getElementById('save-btn');
 
   function getExpenseTotal() {
     return parseFloat(amountInput.value) || 0;
+  }
+
+  function setSaveEnabled(enabled) {
+    saveBtn.disabled = !enabled;
+    saveBtn.style.opacity = enabled ? '1' : '0.45';
+    saveBtn.style.cursor  = enabled ? 'pointer' : 'not-allowed';
   }
 
   function updateCustomTotal() {
@@ -143,54 +150,64 @@
       if (inp.style.display !== 'none') total += parseFloat(inp.value) || 0;
     });
     var expTotal = getExpenseTotal();
-    customTotalSpan.textContent = total.toFixed(2);
+    customTotalSpan.textContent  = total.toFixed(2);
     expenseTotalSpan.textContent = expTotal.toFixed(2);
     var diff = Math.abs(total - expTotal);
-    if (diff < 0.01) {
+    if (expTotal === 0) {
+      totalStatus.textContent = '';
+      setSaveEnabled(false);
+    } else if (diff < 0.01) {
       totalStatus.textContent = '✓ Balanced';
       totalStatus.style.color = 'var(--secondary)';
+      setSaveEnabled(true);
     } else if (total > expTotal) {
       totalStatus.textContent = '↑ Over by ₹' + (total - expTotal).toFixed(2);
       totalStatus.style.color = 'var(--danger)';
+      setSaveEnabled(false);
     } else {
       totalStatus.textContent = '↓ Under by ₹' + (expTotal - total).toFixed(2);
       totalStatus.style.color = 'var(--warning)';
+      setSaveEnabled(false);
     }
   }
 
   function setEqualMode() {
     selectAllWrap.style.display = 'flex';
     customTotalBar.style.display = 'none';
-    document.querySelectorAll('.custom-amt').forEach(function(inp) { inp.style.display = 'none'; inp.value = ''; });
+    document.querySelectorAll('.custom-amt').forEach(function(inp) {
+      inp.style.display = 'none';
+      inp.value = '';
+    });
+    setSaveEnabled(true); // equal mode is always valid once members selected
   }
 
   function setCustomMode() {
     selectAllWrap.style.display = 'none';
     customTotalBar.style.display = 'block';
-    expenseTotalSpan.textContent = getExpenseTotal().toFixed(2);
+    // Auto-check ALL members and show their amount inputs
     document.querySelectorAll('.member-checkbox').forEach(function(cb) {
-      var row = cb.closest('label');
-      var amtInput = row.querySelector('.custom-amt');
-      if (cb.checked) { amtInput.style.display = 'block'; }
+      cb.checked = true;
+      cb.closest('label').querySelector('.custom-amt').style.display = 'block';
     });
-    updateCustomTotal();
+    updateCustomTotal(); // will disable save until balanced
   }
 
-  equalRadio.addEventListener('change', function() { if (this.checked) setEqualMode(); });
+  equalRadio.addEventListener('change',  function() { if (this.checked) setEqualMode(); });
   customRadio.addEventListener('change', function() { if (this.checked) setCustomMode(); });
 
-  // Show/hide custom amount when checkbox toggled in custom mode
+  // When a member checkbox is toggled in custom mode, show/hide their amount input
   document.querySelectorAll('.member-checkbox').forEach(function(cb) {
     cb.addEventListener('change', function() {
       if (customRadio.checked) {
-        var amtInput = this.closest('label').querySelector('.custom-amt');
-        amtInput.style.display = this.checked ? 'block' : 'none';
-        if (!this.checked) amtInput.value = '';
+        var inp = this.closest('label').querySelector('.custom-amt');
+        inp.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) inp.value = '';
         updateCustomTotal();
       }
     });
   });
 
+  // Re-check balance whenever an amount or the total changes
   document.querySelectorAll('.custom-amt').forEach(function(inp) {
     inp.addEventListener('input', updateCustomTotal);
   });
@@ -198,22 +215,20 @@
     if (customRadio.checked) updateCustomTotal();
   });
 
-  // Select all (equal mode only)
+  // Select all checkbox (equal mode only)
   document.getElementById('select-all-members').addEventListener('change', function() {
     document.querySelectorAll('.member-checkbox').forEach(function(cb) { cb.checked = this.checked; }.bind(this));
   });
 
-  // Validate before submit in custom mode
+  // Hard block on submit — safety net in case button state gets out of sync
   document.querySelector('form').addEventListener('submit', function(e) {
     if (customRadio.checked) {
       var total = 0;
       document.querySelectorAll('.custom-amt').forEach(function(inp) {
         if (inp.style.display !== 'none') total += parseFloat(inp.value) || 0;
       });
-      var expTotal = getExpenseTotal();
-      if (Math.abs(total - expTotal) >= 0.01) {
+      if (Math.abs(total - getExpenseTotal()) >= 0.01) {
         e.preventDefault();
-        alert('Custom amounts must add up to ₹' + expTotal.toFixed(2) + '. Currently: ₹' + total.toFixed(2));
       }
     }
   });
