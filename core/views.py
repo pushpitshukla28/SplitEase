@@ -208,11 +208,22 @@ def add_expense(request, trip_pk):
             expense.trip = trip
             expense.save()
             split_members = form.cleaned_data['split_members']
-            count = split_members.count()
-            if count > 0:
-                share = (expense.amount / count).quantize(Decimal('0.01'))
+            split_type = request.POST.get('split_type', 'equal')
+            if split_type == 'custom':
                 for member in split_members:
-                    ExpenseSplit.objects.create(expense=expense, user=member, amount=share)
+                    amt_str = request.POST.get(f'custom_{member.pk}', '0')
+                    try:
+                        custom_amt = Decimal(amt_str).quantize(Decimal('0.01'))
+                    except Exception:
+                        custom_amt = Decimal('0')
+                    if custom_amt > 0:
+                        ExpenseSplit.objects.create(expense=expense, user=member, amount=custom_amt)
+            else:
+                count = split_members.count()
+                if count > 0:
+                    share = (expense.amount / count).quantize(Decimal('0.01'))
+                    for member in split_members:
+                        ExpenseSplit.objects.create(expense=expense, user=member, amount=share)
             messages.success(request, f'Expense "{expense.description}" added!')
             return redirect('trip_detail', pk=trip.pk)
     else:

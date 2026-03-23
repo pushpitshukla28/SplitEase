@@ -64,25 +64,45 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">
-          Split Between *
-          <small style="font-weight:400;color:var(--text-muted);margin-left:0.5rem;">
-            (Equal split among selected)
-          </small>
-        </label>
-        <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--primary);margin-bottom:0.5rem;cursor:pointer;">
+        <label class="form-label">Split Between *</label>
+
+        <!-- Split type toggle -->
+        <div style="display:flex;gap:1.5rem;margin-bottom:0.85rem;padding:0.6rem 0.85rem;background:#EDF7EF;border-radius:10px;border:1px solid var(--border);">
+          <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;font-weight:600;color:var(--text);">
+            <input type="radio" name="split_type" value="equal" id="split-equal" checked> Equal split
+          </label>
+          <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;font-weight:600;color:var(--text);">
+            <input type="radio" name="split_type" value="custom" id="split-custom"> Custom amounts
+          </label>
+        </div>
+
+        <label id="select-all-wrap" style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--primary);margin-bottom:0.5rem;cursor:pointer;">
           <input type="checkbox" id="select-all-members"> Select All
         </label>
-        <div class="checkbox-list">
+
+        <div class="checkbox-list" id="members-list">
           {% for choice in form.split_members %}
-            <label>
-              <input type="checkbox" name="split_members" value="{{ choice.data.value }}"
-                class="member-checkbox"
-                {% if choice.data.value|stringformat:"s" in form.split_members.value|default_if_none:"" %}checked{% endif %}>
-              {{ choice.choice_label }}
+            <label id="member-row-{{ choice.data.value }}" style="justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:0.6rem;">
+                <input type="checkbox" name="split_members" value="{{ choice.data.value }}"
+                  class="member-checkbox"
+                  {% if choice.data.value|stringformat:"s" in form.split_members.value|default_if_none:"" %}checked{% endif %}>
+                <span>{{ choice.choice_label }}</span>
+              </div>
+              <input type="number" name="custom_{{ choice.data.value }}"
+                class="custom-amt form-control"
+                style="display:none;width:110px;text-align:right;"
+                step="0.01" min="0" placeholder="₹0.00">
             </label>
           {% endfor %}
         </div>
+
+        <!-- Custom split total feedback -->
+        <div id="custom-total-bar" style="display:none;margin-top:0.6rem;padding:0.6rem 0.85rem;border-radius:8px;font-size:0.85rem;font-weight:600;background:#EDF7EF;border:1px solid var(--border);">
+          Assigned: ₹<span id="custom-total">0.00</span> &nbsp;/&nbsp; Total: ₹<span id="expense-total-display">0.00</span>
+          <span id="total-status" style="margin-left:0.5rem;"></span>
+        </div>
+
         {% if form.split_members.errors %}
           <ul class="errorlist">{% for e in form.split_members.errors %}<li>{{ e }}</li>{% endfor %}</ul>
         {% endif %}
@@ -99,7 +119,103 @@
 
 {% block extra_js %}
 <script>
+  // Set max date to today
   var t = new Date(); var pad = function(n){return String(n).padStart(2,'0');};
   document.getElementById('id_date').setAttribute('max', t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate()));
+
+  // ---- Split type toggle ----
+  var equalRadio  = document.getElementById('split-equal');
+  var customRadio = document.getElementById('split-custom');
+  var selectAllWrap = document.getElementById('select-all-wrap');
+  var customTotalBar = document.getElementById('custom-total-bar');
+  var customTotalSpan = document.getElementById('custom-total');
+  var expenseTotalSpan = document.getElementById('expense-total-display');
+  var totalStatus = document.getElementById('total-status');
+  var amountInput = document.getElementById('id_amount');
+
+  function getExpenseTotal() {
+    return parseFloat(amountInput.value) || 0;
+  }
+
+  function updateCustomTotal() {
+    var total = 0;
+    document.querySelectorAll('.custom-amt').forEach(function(inp) {
+      if (inp.style.display !== 'none') total += parseFloat(inp.value) || 0;
+    });
+    var expTotal = getExpenseTotal();
+    customTotalSpan.textContent = total.toFixed(2);
+    expenseTotalSpan.textContent = expTotal.toFixed(2);
+    var diff = Math.abs(total - expTotal);
+    if (diff < 0.01) {
+      totalStatus.textContent = '✓ Balanced';
+      totalStatus.style.color = 'var(--secondary)';
+    } else if (total > expTotal) {
+      totalStatus.textContent = '↑ Over by ₹' + (total - expTotal).toFixed(2);
+      totalStatus.style.color = 'var(--danger)';
+    } else {
+      totalStatus.textContent = '↓ Under by ₹' + (expTotal - total).toFixed(2);
+      totalStatus.style.color = 'var(--warning)';
+    }
+  }
+
+  function setEqualMode() {
+    selectAllWrap.style.display = 'flex';
+    customTotalBar.style.display = 'none';
+    document.querySelectorAll('.custom-amt').forEach(function(inp) { inp.style.display = 'none'; inp.value = ''; });
+  }
+
+  function setCustomMode() {
+    selectAllWrap.style.display = 'none';
+    customTotalBar.style.display = 'block';
+    expenseTotalSpan.textContent = getExpenseTotal().toFixed(2);
+    document.querySelectorAll('.member-checkbox').forEach(function(cb) {
+      var row = cb.closest('label');
+      var amtInput = row.querySelector('.custom-amt');
+      if (cb.checked) { amtInput.style.display = 'block'; }
+    });
+    updateCustomTotal();
+  }
+
+  equalRadio.addEventListener('change', function() { if (this.checked) setEqualMode(); });
+  customRadio.addEventListener('change', function() { if (this.checked) setCustomMode(); });
+
+  // Show/hide custom amount when checkbox toggled in custom mode
+  document.querySelectorAll('.member-checkbox').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      if (customRadio.checked) {
+        var amtInput = this.closest('label').querySelector('.custom-amt');
+        amtInput.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) amtInput.value = '';
+        updateCustomTotal();
+      }
+    });
+  });
+
+  document.querySelectorAll('.custom-amt').forEach(function(inp) {
+    inp.addEventListener('input', updateCustomTotal);
+  });
+  amountInput.addEventListener('input', function() {
+    if (customRadio.checked) updateCustomTotal();
+  });
+
+  // Select all (equal mode only)
+  document.getElementById('select-all-members').addEventListener('change', function() {
+    document.querySelectorAll('.member-checkbox').forEach(function(cb) { cb.checked = this.checked; }.bind(this));
+  });
+
+  // Validate before submit in custom mode
+  document.querySelector('form').addEventListener('submit', function(e) {
+    if (customRadio.checked) {
+      var total = 0;
+      document.querySelectorAll('.custom-amt').forEach(function(inp) {
+        if (inp.style.display !== 'none') total += parseFloat(inp.value) || 0;
+      });
+      var expTotal = getExpenseTotal();
+      if (Math.abs(total - expTotal) >= 0.01) {
+        e.preventDefault();
+        alert('Custom amounts must add up to ₹' + expTotal.toFixed(2) + '. Currently: ₹' + total.toFixed(2));
+      }
+    }
+  });
 </script>
 {% endblock %}

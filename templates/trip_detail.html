@@ -175,7 +175,7 @@
                         Open UPI App →
                       </button>
                     </div>
-                    <div style="font-size:0.74rem;color:var(--text-muted);margin-top:0.4rem;">Works on mobile. After paying, click "Mark as Paid" above.</div>
+                    <div style="font-size:0.74rem;color:var(--text-muted);margin-top:0.4rem;">Opens UPI app with payee pre-filled. Enter ₹{{ b.amount|floatformat:2 }} manually, then click "Mark as Paid" above.</div>
                   </div>
                 </div>
               </details>
@@ -230,8 +230,7 @@ function openUPI(creditorPk, creditorName) {
   }
   var link = 'upi://pay?pa=' + encodeURIComponent(upiId)
     + '&pn=' + encodeURIComponent(creditorName)
-    + '&am=' + encodeURIComponent(amount)
-    + '&cu=INR&tn=' + encodeURIComponent('SplitEase settlement');
+    + '&cu=INR&tn=' + encodeURIComponent('SplitEase settlement - ₹' + amount);
   window.location.href = link;
 }
 </script>

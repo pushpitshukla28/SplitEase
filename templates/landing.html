@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SplitEase – Split expenses, stay friends</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23235347'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-size='17' fill='%23DAF1DE' font-family='system-ui%2Csans-serif'%3E%E2%82%B9%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="{% static 'css/style.css' %}" />
   <style>
     /* ===== LANDING PAGE STYLES ===== */
@@ -360,12 +361,35 @@
     /* ---- Footer ---- */
     .landing-footer {
       background: #051F20;
-      color: rgba(218,241,222,0.45);
-      text-align: center;
-      padding: 2rem;
-      font-size: 0.85rem;
+      color: rgba(218,241,222,0.5);
+      font-size: 0.88rem;
     }
-    .landing-footer span { color: #8EB69B; font-weight: 700; }
+    .footer-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 2.5rem;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 3rem;
+    }
+    @media (max-width: 700px) {
+      .footer-main { grid-template-columns: 1fr; gap: 2rem; padding: 2.5rem 1.5rem 1.5rem; }
+    }
+    .footer-brand { color: #DAF1DE; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.3px; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .footer-brand-icon { width: 28px; height: 28px; background: #235347; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: #DAF1DE; border: 1px solid rgba(218,241,222,0.2); flex-shrink: 0; }
+    .footer-tagline { color: rgba(218,241,222,0.55); font-size: 0.88rem; line-height: 1.6; max-width: 240px; }
+    .footer-col-title { color: #8EB69B; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
+    .footer-links a { color: rgba(218,241,222,0.6); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; }
+    .footer-links a:hover { color: #DAF1DE; }
+    .footer-bar {
+      border-top: 1px solid rgba(218,241,222,0.08);
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+      color: rgba(218,241,222,0.35);
+      font-size: 0.82rem;
+    }
+    .footer-bar span { color: #8EB69B; font-weight: 700; }
 
     /* ---- Animations ---- */
     @keyframes fadeSlideDown {
@@ -516,7 +540,32 @@
 
 <!-- ===== FOOTER ===== -->
 <footer class="landing-footer">
-  <p>© 2025 <span>SplitEase</span> · Split expenses, stay friends.</p>
+  <div class="footer-main">
+    <div>
+      <div class="footer-brand">
+        <div class="footer-brand-icon">₹</div>
+        SplitEase
+      </div>
+      <p class="footer-tagline">The simplest way to split expenses with friends and family. Track trips, settle debts, stay friends.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Quick Links</div>
+      <ul class="footer-links">
+        <li><a href="{% url 'register' %}">Create Account</a></li>
+        <li><a href="{% url 'login' %}">Sign In</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Features</div>
+      <ul class="footer-links">
+        <li><a href="{% url 'register' %}">Group Trips</a></li>
+        <li><a href="{% url 'register' %}">Expense Splitting</a></li>
+        <li><a href="{% url 'register' %}">Settle Up</a></li>
+        <li><a href="{% url 'register' %}">Personal Tracker</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bar">© 2026 <span>SplitEase</span> · Built with ❤️ · Split expenses, stay friends.</div>
 </footer>
 
 <script>
