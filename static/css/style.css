@@ -567,6 +567,12 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     line-height: 1;
   }
 
+  /* Form inside bottom nav must be a proper flex child */
+  .bottom-nav form {
+    flex: 1;
+    display: flex;
+  }
+
   /* Push content above bottom nav */
   body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 
