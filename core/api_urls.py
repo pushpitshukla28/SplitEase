@@ -33,4 +33,7 @@ urlpatterns = [
     path('friends/accept/<int:request_id>/', api_views.api_accept_friend_request, name='api_accept_friend_request'),
     path('friends/decline/<int:request_id>/', api_views.api_decline_friend_request, name='api_decline_friend_request'),
     path('friends/remove/<int:user_id>/', api_views.api_remove_friend, name='api_remove_friend'),
+
+    # Account
+    path('account/delete/', api_views.api_delete_account, name='api_delete_account'),
 ]

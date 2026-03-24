@@ -374,3 +374,14 @@ def api_remove_friend(request, user_id):
     FriendRequest.objects.filter(from_user=request.user, to_user=other, accepted=True).delete()
     FriendRequest.objects.filter(from_user=other, to_user=request.user, accepted=True).delete()
     return Response({'detail': 'Removed.'})
+
+
+# ── Account ────────────────────────────────────────────────────────────────────
+
+@api_view(['POST'])
+def api_delete_account(request):
+    confirm = request.data.get('confirm_username', '').strip()
+    if confirm != request.user.username:
+        return Response({'detail': 'Username did not match.'}, status=status.HTTP_400_BAD_REQUEST)
+    request.user.delete()
+    return Response({'detail': 'Account deleted.'})
