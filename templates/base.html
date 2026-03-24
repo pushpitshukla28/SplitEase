@@ -73,6 +73,7 @@
         {% endif %}
       </a>
     </li>
+    <li><a href="{% url 'account_settings' %}" title="Account Settings">⚙️</a></li>
     <li>
       <form method="post" action="{% url 'logout' %}" style="display:inline;">
         {% csrf_token %}

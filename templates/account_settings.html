@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Account Settings – SplitEase{% endblock %}
+
+{% block content %}
+<a href="{% url 'dashboard' %}" class="back-link">← Back to Dashboard</a>
+
+<div class="page-header">
+  <div>
+    <h1>Account Settings</h1>
+    <p>Manage your SplitEase account</p>
+  </div>
+</div>
+
+<div style="max-width:560px;">
+
+  <!-- Account Info -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h3 style="margin-bottom:1rem;font-size:1rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Account Info</h3>
+    <div style="display:flex;flex-direction:column;gap:0.6rem;">
+      <div style="display:flex;justify-content:space-between;font-size:0.95rem;">
+        <span style="color:var(--text-muted);">Username</span>
+        <span style="font-weight:600;">{{ request.user.username }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.95rem;">
+        <span style="color:var(--text-muted);">Email</span>
+        <span style="font-weight:600;">{{ request.user.email|default:"—" }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.95rem;">
+        <span style="color:var(--text-muted);">Member since</span>
+        <span style="font-weight:600;">{{ request.user.date_joined|date:"N j, Y" }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger Zone -->
+  <div class="card" style="border:1.5px solid #FCA5A5;">
+    <h3 style="margin-bottom:0.4rem;font-size:1rem;color:#C62828;font-weight:700;">⚠️ Danger Zone</h3>
+    <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1.25rem;">
+      Permanently deletes your account and all associated data — trips you created, expenses, personal logs, and friend connections. <strong>This cannot be undone.</strong>
+    </p>
+
+    <form method="post" action="{% url 'delete_account' %}" onsubmit="return confirmDelete(event)">
+      {% csrf_token %}
+      <label style="font-size:0.88rem;font-weight:600;color:var(--text);display:block;margin-bottom:0.5rem;">
+        Type your username <strong>{{ request.user.username }}</strong> to confirm:
+      </label>
+      <input type="text" name="confirm_username" id="confirm-input"
+        class="form-control" placeholder="Enter username"
+        style="margin-bottom:0.85rem;" autocomplete="off">
+      <button type="submit" id="delete-btn" class="btn"
+        style="background:#C62828;color:#fff;border:none;opacity:0.4;cursor:not-allowed;"
+        disabled>
+        Delete My Account Permanently
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  var input = document.getElementById('confirm-input');
+  var btn = document.getElementById('delete-btn');
+  var expected = "{{ request.user.username }}";
+
+  input.addEventListener('input', function() {
+    var match = this.value === expected;
+    btn.disabled = !match;
+    btn.style.opacity = match ? '1' : '0.4';
+    btn.style.cursor = match ? 'pointer' : 'not-allowed';
+  });
+
+  function confirmDelete(e) {
+    return confirm('Are you absolutely sure? This will permanently delete your account and cannot be undone.');
+  }
+</script>
+{% endblock %}

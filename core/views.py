@@ -402,3 +402,23 @@ def delete_personal_expense(request, pk):
         pe.delete()
         messages.success(request, 'Expense deleted.')
     return redirect('personal_expenses')
+
+
+@login_required
+def account_settings(request):
+    return render(request, 'account_settings.html')
+
+
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        confirm = request.POST.get('confirm_username', '').strip()
+        if confirm == request.user.username:
+            user = request.user
+            logout(request)
+            user.delete()
+            messages.success(request, 'Your account has been permanently deleted.')
+            return redirect('landing')
+        else:
+            messages.error(request, 'Username did not match. Account not deleted.')
+    return redirect('account_settings')
