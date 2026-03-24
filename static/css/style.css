@@ -255,6 +255,8 @@ a:hover { text-decoration: underline; }
   text-decoration: none;
   color: var(--text);
   display: block;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .trip-card:hover {
