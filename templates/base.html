@@ -53,14 +53,7 @@
 
 <nav class="navbar">
   <a href="{% url 'dashboard' %}" class="navbar-brand">
-    <span class="logo-mark">
-      <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2 2h12v13l-1.8-1.1L10 15l-2-1.1L6 15l-2.2-1.1L2 15z" stroke="white" stroke-width="1.3" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
-        <line x1="4.5" y1="6" x2="11.5" y2="6" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="4.5" y1="8.5" x2="11.5" y2="8.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="4.5" y1="11" x2="8" y2="11" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
-    </span> SplitEase
+    <img src="{% static 'icons/logo.jpg' %}" alt="SplitEase" style="width:32px;height:32px;object-fit:contain;border-radius:8px;"> SplitEase
   </a>
   <ul class="navbar-nav">
     <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
