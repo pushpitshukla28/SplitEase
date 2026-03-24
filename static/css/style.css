@@ -273,8 +273,8 @@ a:hover { text-decoration: underline; }
   margin-bottom: 0.85rem;
 }
 
-.trip-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; }
-.trip-card .desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+.trip-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trip-card .desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trip-card .meta { display: flex; gap: 1rem; font-size: 0.82rem; color: var(--text-muted); }
 .trip-card .meta span { display: flex; align-items: center; gap: 0.25rem; }
 
