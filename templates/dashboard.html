@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}!</h1>
+    <h1>{% if trips %}Welcome back{% else %}Welcome{% endif %}, {{ request.user.first_name|default:request.user.username }}!</h1>
     <p>Here's your financial snapshot across all trips.</p>
   </div>
   <a href="{% url 'create_trip' %}" class="btn btn-primary">+ New Trip</a>
@@ -37,12 +37,30 @@
   <div class="trips-grid">
     {% for trip in trips %}
     <a href="{% url 'trip_detail' trip.pk %}" class="trip-card">
-      <div class="trip-card-icon" style="font-size:1rem;font-weight:800;letter-spacing:-0.5px;">
-        {{ trip.name|slice:":2"|upper }}
+      <div class="trip-card-icon">
+        <svg width="28" height="28" viewBox="0 0 100 115" xmlns="http://www.w3.org/2000/svg">
+          <!-- Handle bar -->
+          <rect x="33" y="2" width="34" height="7" rx="3.5" fill="white"/>
+          <!-- Handle left post -->
+          <rect x="33" y="2" width="9" height="21" rx="4" fill="white"/>
+          <!-- Handle right post -->
+          <rect x="58" y="2" width="9" height="21" rx="4" fill="white"/>
+          <!-- Suitcase body -->
+          <rect x="5" y="21" width="90" height="74" rx="14" fill="white"/>
+          <!-- Airplane fuselage -->
+          <ellipse cx="50" cy="57" rx="5" ry="20" fill="#235347"/>
+          <!-- Airplane wings -->
+          <ellipse cx="50" cy="53" rx="25" ry="6" fill="#235347"/>
+          <!-- Airplane tail -->
+          <ellipse cx="50" cy="73" rx="12" ry="4" fill="#235347"/>
+          <!-- Wheels -->
+          <circle cx="23" cy="105" r="8" fill="white"/>
+          <circle cx="77" cy="105" r="8" fill="white"/>
+        </svg>
       </div>
-      <h3>{{ trip.name }}</h3>
+      <h3>{{ trip.name|truncatechars:22 }}</h3>
       {% if trip.description %}
-        <p class="desc">{{ trip.description|truncatechars:60 }}</p>
+        <p class="desc">{{ trip.description|truncatechars:55 }}</p>
       {% else %}
         <p class="desc" style="color:#cbd5e1;">No description</p>
       {% endif %}
