@@ -1,260 +1,518 @@
-{% extends 'base.html' %}
-{% block title %}{{ trip.name }} – SplitEase{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>{{ trip.name }} – SplitEase</title>
+  <link rel="icon" type="image/jpeg" href="{% static 'icons/logo.jpg' %}"/>
+  <link rel="apple-touch-icon" href="{% static 'icons/logo.jpg' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#006a6a">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#006a6a",
+            "on-primary": "#e0fffe",
+            "primary-container": "#9ff1f0",
+            "on-primary-container": "#005c5c",
+            "secondary-container": "#cce8e7",
+            "on-secondary-container": "#3d5656",
+            "tertiary-container": "#b5e0fd",
+            "on-tertiary-container": "#255169",
+            "surface": "#f5fafa",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#edf5f5",
+            "surface-container": "#e6f0f0",
+            "surface-container-high": "#e0eaeb",
+            "surface-container-highest": "#d8e5e6",
+            "on-surface": "#293435",
+            "on-surface-variant": "#556162",
+            "outline-variant": "#a8b4b5",
+            "inverse-surface": "#0a0f10",
+            "error": "#a83836",
+          },
+          fontFamily: {
+            "headline": ["Manrope", "sans-serif"],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body { font-family: 'Inter', sans-serif; background-color: #f5fafa; color: #293435; }
+    h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
+    a { text-decoration: none; color: inherit; }
+    .primary-gradient { background: linear-gradient(135deg, #006a6a 0%, #005d5d 100%); }
+    details summary { list-style: none; }
+    details summary::-webkit-details-marker { display: none; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
 
-{% block content %}
-<a href="{% url 'dashboard' %}" class="back-link">← Back to Dashboard</a>
-
-<div class="page-header">
-  <div>
-    <h1>{{ trip.name }}</h1>
-    {% if trip.description %}
-      <p>{{ trip.description }}</p>
-    {% endif %}
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-sm h-16">
+  <div class="flex justify-between items-center px-6 md:px-8 h-full max-w-screen-2xl mx-auto">
+    <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5">
+      <img src="{% static 'icons/logo.jpg' %}" alt="SplitEase" class="w-8 h-8 object-contain rounded-lg">
+      <span class="text-2xl font-black text-teal-800 tracking-tighter">SplitEase</span>
+    </a>
+    <div class="hidden md:flex items-center gap-8">
+      <a class="text-slate-500 hover:text-teal-600 transition-colors text-sm font-medium" href="{% url 'dashboard' %}">Dashboard</a>
+      <a class="text-teal-700 font-bold border-b-2 border-teal-600 pb-1 text-sm" href="{% url 'dashboard' %}">Trips</a>
+      <a class="text-slate-500 hover:text-teal-600 transition-colors text-sm font-medium" href="{% url 'friends' %}">Friends</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'add_expense' trip.pk %}" class="primary-gradient text-on-primary px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 transition-all hidden sm:flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        Add Expense
+      </a>
+      <a href="{% url 'account_settings' %}" class="p-2 hover:bg-slate-100 rounded-lg transition-all text-on-surface-variant">
+        <span class="material-symbols-outlined">account_circle</span>
+      </a>
+      <form method="post" action="{% url 'logout' %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="p-2 hover:bg-slate-100 rounded-lg transition-all text-on-surface-variant" title="Logout">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </form>
+    </div>
   </div>
-  <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
-    <a href="{% url 'add_expense' trip.pk %}" class="btn btn-success">+ Add Expense</a>
-    {% if request.user == trip.created_by %}
-    <form method="post" action="{% url 'delete_trip' trip.pk %}" style="display:inline;">
+</nav>
+
+<!-- Sidebar (Desktop) -->
+<aside class="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 bg-slate-50 border-r border-slate-100 z-40 pt-20">
+  <div class="px-6 py-4 mb-2">
+    <h2 class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60">Navigation</h2>
+  </div>
+  <nav class="flex-1 space-y-0.5">
+    <a class="flex items-center gap-3 px-6 py-3.5 text-slate-500 hover:bg-teal-50 hover:text-teal-600 transition-all text-sm" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[20px]">dashboard</span>
+      Dashboard
+    </a>
+    <a class="flex items-center gap-3 px-6 py-3.5 bg-white text-teal-700 border-l-4 border-teal-600 font-bold text-sm" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+      Trips
+    </a>
+    <a class="flex items-center gap-3 px-6 py-3.5 text-slate-500 hover:bg-teal-50 hover:text-teal-600 transition-all text-sm" href="{% url 'personal_expenses' %}">
+      <span class="material-symbols-outlined text-[20px]">wallet</span>
+      My Expenses
+    </a>
+    <a class="flex items-center gap-3 px-6 py-3.5 text-slate-500 hover:bg-teal-50 hover:text-teal-600 transition-all text-sm" href="{% url 'friends' %}">
+      <span class="material-symbols-outlined text-[20px]">group</span>
+      Friends
+      {% if pending_friend_requests_count %}
+        <span class="ml-auto bg-teal-500 text-white rounded-full w-5 h-5 text-[10px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+      {% endif %}
+    </a>
+  </nav>
+  <div class="p-6 border-t border-slate-100 space-y-1">
+    <a href="{% url 'add_expense' trip.pk %}" class="primary-gradient text-on-primary py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 mb-4">
+      <span class="material-symbols-outlined text-[18px]">add</span>
+      Add Expense
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-teal-600 transition-all rounded-lg text-sm" href="{% url 'account_settings' %}">
+      <span class="material-symbols-outlined text-[18px]">settings</span>
+      Account Settings
+    </a>
+    <form method="post" action="{% url 'logout' %}" style="margin:0;">
       {% csrf_token %}
-      <button type="submit" class="btn btn-danger"
-        onclick="return confirm('Delete \'{{ trip.name }}\' and all its expenses? This cannot be undone.')">
-        Delete Trip
+      <button type="submit" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-red-500 transition-all rounded-lg text-sm w-full">
+        <span class="material-symbols-outlined text-[18px]">logout</span>
+        Logout
       </button>
     </form>
-    {% endif %}
   </div>
-</div>
+</aside>
 
-<!-- Summary stats -->
-<div class="stats-grid" style="margin-bottom:1.75rem;">
-  <div class="stat-card">
-    <div class="stat-label">Total Spent</div>
-    <div class="stat-value">₹{{ total|floatformat:2 }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Expenses</div>
-    <div class="stat-value">{{ expenses.count }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Members</div>
-    <div class="stat-value">{{ members.count }}</div>
-  </div>
-</div>
+<!-- Main Content -->
+<main class="lg:ml-64 pt-24 pb-28 px-5 md:px-10 max-w-7xl mx-auto">
 
-<div class="trip-detail-grid">
-  <!-- Left: Expenses -->
-  <div>
-    <div class="section-title">Expenses</div>
-
-    {% if expenses %}
-    <div class="card" style="padding:0;">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Amount</th>
-              <th>Paid By</th>
-              <th>Date</th>
-              <th>Split Among</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for expense in expenses %}
-            <tr>
-              <td><strong>{{ expense.description }}</strong></td>
-              <td><span class="badge badge-primary">₹{{ expense.amount|floatformat:2 }}</span></td>
-              <td>
-                <div style="display:flex;align-items:center;gap:0.5rem;">
-                  <div class="avatar">{{ expense.paid_by.username|first|upper }}</div>
-                  {{ expense.paid_by.username }}
-                </div>
-              </td>
-              <td style="color:var(--text-muted);white-space:nowrap;">{{ expense.date|date:"d M Y" }}</td>
-              <td>
-                <div class="split-list">
-                  {% for split in expense.splits.all %}
-                    <span class="split-pill" title="₹{{ split.amount|floatformat:2 }}">
-                      {{ split.user.username }} (₹{{ split.amount|floatformat:2 }})
-                    </span>
-                  {% empty %}
-                    <span class="split-pill">—</span>
-                  {% endfor %}
-                </div>
-              </td>
-              <td>
-                {% if request.user == expense.paid_by or request.user == trip.created_by %}
-                <form method="post" action="{% url 'delete_expense' expense.pk %}" class="confirm-delete delete-btn-form">
-                  {% csrf_token %}
-                  <button type="submit">Delete</button>
-                </form>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% else %}
-    <div class="empty-state">
-      <div class="empty-icon">🧾</div>
-      <h3>No expenses yet</h3>
-      <p>Add your first expense to get started.</p>
-      <br>
-      <a href="{% url 'add_expense' trip.pk %}" class="btn btn-success">+ Add Expense</a>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Right: Members + Balances -->
-  <div>
-    <!-- Members -->
-    <div class="card" style="margin-bottom:1.25rem;">
-      <div class="card-header">
-        <h3>Members</h3>
-      </div>
-      <div class="members-list">
-        {% for member in members %}
-          <div class="member-chip">
-            <div class="avatar">{{ member.username|first|upper }}</div>
-            {{ member.username }}
-            {% if member == trip.created_by %}
-              <span style="font-size:0.7rem;color:var(--primary);">admin</span>
-            {% endif %}
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- Balances -->
-    <div class="card">
-      <div class="card-header">
-        <h3>Balances</h3>
-      </div>
-
-      {% if balance_list %}
-        {% for b in balance_list %}
-          {% if b.debtor == request.user %}
-            <div class="balance-item owes" style="flex-direction:column;align-items:flex-start;gap:0.5rem;">
-              <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
-                <span>You owe <strong>{{ b.creditor.username }}</strong></span>
-                <span class="amount">₹{{ b.amount|floatformat:2 }}</span>
-              </div>
-              <!-- Settle Up panel -->
-              <details style="width:100%;">
-                <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--primary);list-style:none;display:flex;align-items:center;gap:0.35rem;">
-                  ↳ Settle Up
-                </summary>
-                <div style="margin-top:0.75rem;padding:1rem;background:#f8fafc;border-radius:10px;border:1px solid var(--border);">
-                  <form method="post" action="{% url 'settle_up' trip.pk %}" id="settle-form-{{ b.creditor.pk }}">
-                    {% csrf_token %}
-                    <input type="hidden" name="payee_id" value="{{ b.creditor.pk }}">
-                    <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;margin-bottom:0.75rem;">
-                      <div>
-                        <label style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Amount (₹)</label>
-                        <input type="number" name="amount" id="amt-{{ b.creditor.pk }}"
-                          value="{{ b.amount }}" step="0.01" min="0.01" max="{{ b.amount }}"
-                          class="form-control" style="width:130px;margin-top:0.2rem;">
-                      </div>
-                      <div style="margin-top:1.2rem;">
-                        <button type="submit" class="btn btn-success btn-sm">✓ Mark as Paid</button>
-                      </div>
-                    </div>
-                  </form>
-                  <!-- UPI Section -->
-                  <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.25rem;">
-                    <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:0.6rem;">Pay via UPI (GPay / PhonePe / Paytm)</div>
-                    <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;">
-                      <input type="text" id="upi-{{ b.creditor.pk }}"
-                        placeholder="{{ b.creditor.username }}'s UPI ID"
-                        class="form-control" style="flex:1;">
-                      <button type="button" class="btn btn-outline btn-sm" style="flex-shrink:0;"
-                        onclick="copyUPI('{{ b.creditor.pk }}')">
-                        Copy ID
-                      </button>
-                    </div>
-                    <div style="display:flex;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;background:#EDF7EF;border-radius:8px;border:1px solid var(--border);margin-bottom:0.5rem;">
-                      <span style="font-size:0.82rem;color:var(--text-muted);">Amount to pay:</span>
-                      <strong style="font-size:0.95rem;color:var(--text);">₹{{ b.amount|floatformat:2 }}</strong>
-                      <button type="button" class="btn btn-outline btn-sm" style="margin-left:auto;padding:0.25rem 0.65rem;"
-                        onclick="copyText('{{ b.amount }}')">
-                        Copy ₹
-                      </button>
-                    </div>
-                    <div style="font-size:0.74rem;color:var(--text-muted);line-height:1.6;">
-                      1. Copy the UPI ID → open your UPI app → paste &amp; send<br>
-                      2. Come back and click <strong>"Mark as Paid"</strong> above
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </div>
-          {% elif b.creditor == request.user %}
-            <div class="balance-item owed">
-              <span><strong>{{ b.debtor.username }}</strong> owes you</span>
-              <span class="amount">₹{{ b.amount|floatformat:2 }}</span>
-            </div>
-          {% else %}
-            <div class="balance-item" style="background:#f8fafc;border:1px solid var(--border);">
-              <span><strong>{{ b.debtor.username }}</strong> → <strong>{{ b.creditor.username }}</strong></span>
-              <span class="amount" style="color:var(--text);">₹{{ b.amount|floatformat:2 }}</span>
-            </div>
-          {% endif %}
-        {% endfor %}
-      {% else %}
-        <p style="color:var(--secondary);font-size:0.9rem;text-align:center;padding:1rem 0;font-weight:600;">
-          All settled up!
-        </p>
-      {% endif %}
-    </div>
-
-    <!-- Settlement History -->
-    {% if settlements %}
-    <div class="card" style="margin-top:1.25rem;">
-      <div class="card-header"><h3>Settlement History</h3></div>
-      {% for s in settlements %}
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;">
-        <span>
-          <strong>{{ s.payer.username }}</strong>
-          <span style="color:var(--text-muted);"> paid </span>
-          <strong>{{ s.payee.username }}</strong>
-        </span>
-        <span style="font-weight:700;color:var(--secondary);">₹{{ s.amount|floatformat:2 }}</span>
-      </div>
+  <!-- Django Flash Messages -->
+  {% if messages %}
+    <div class="mb-6 space-y-2">
+      {% for message in messages %}
+        <div class="px-4 py-3 rounded-xl text-sm font-medium
+          {% if message.tags == 'success' %}bg-teal-50 text-teal-800 border border-teal-200
+          {% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+          {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+          {{ message }}
+        </div>
       {% endfor %}
     </div>
-    {% endif %}
+  {% endif %}
 
+  <!-- Page Header -->
+  <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div>
+      <!-- Breadcrumb -->
+      <nav class="flex items-center gap-1.5 text-on-surface-variant text-xs mb-4">
+        <a href="{% url 'dashboard' %}" class="hover:text-primary transition-colors">Dashboard</a>
+        <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+        <span class="text-primary font-semibold">{{ trip.name }}</span>
+      </nav>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface mb-2">{{ trip.name }}</h1>
+      {% if trip.description %}
+        <p class="text-on-surface-variant font-medium text-sm">{{ trip.description }}</p>
+      {% endif %}
+    </div>
+    <!-- Stats -->
+    <div class="flex gap-6 flex-shrink-0">
+      <div class="text-right">
+        <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-1">Total Spent</p>
+        <div class="text-3xl font-black text-primary tracking-tighter">&#8377;{{ total|floatformat:2 }}</div>
+      </div>
+      <div class="text-right">
+        <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-1">Expenses</p>
+        <div class="text-3xl font-black text-on-surface tracking-tighter">{{ expenses.count }}</div>
+      </div>
+      <div class="text-right">
+        <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-1">Members</p>
+        <div class="text-3xl font-black text-on-surface tracking-tighter">{{ members.count }}</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Bento Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+    <!-- LEFT COLUMN: Actions + Expense Feed -->
+    <div class="lg:col-span-8 space-y-8">
+
+      <!-- Action Bar -->
+      <section class="bg-surface-container-lowest p-6 rounded-3xl shadow-sm flex flex-wrap gap-4 items-center justify-between">
+        <div>
+          <h3 class="font-bold text-base">Trip Actions</h3>
+          <p class="text-on-surface-variant text-xs mt-0.5">Manage expenses and trip settings</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <a href="{% url 'add_expense' trip.pk %}" class="primary-gradient text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            Add Expense
+          </a>
+          {% if request.user == trip.created_by %}
+          <form method="post" action="{% url 'delete_trip' trip.pk %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit"
+              onclick="return confirm('Delete \'{{ trip.name }}\' and all its expenses? This cannot be undone.')"
+              class="bg-red-50 text-red-700 border border-red-200 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-red-100 transition-all flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]">delete</span>
+              Delete Trip
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- Expense Feed -->
+      <section>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold tracking-tight">Expense Ledger</h2>
+          <span class="text-xs font-bold text-on-surface-variant bg-surface-container px-3 py-1 rounded-full">{{ expenses.count }} item{{ expenses.count|pluralize }}</span>
+        </div>
+
+        {% if expenses %}
+          <div class="space-y-3">
+            {% for expense in expenses %}
+            <div class="group bg-surface-container-lowest hover:bg-surface-container-low p-5 rounded-3xl transition-all">
+              <div class="flex items-center gap-5">
+                <!-- Icon -->
+                <div class="flex-shrink-0 w-12 h-12 rounded-2xl bg-secondary-container flex items-center justify-center text-on-secondary-container">
+                  <span class="material-symbols-outlined">receipt</span>
+                </div>
+                <!-- Details -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-2 mb-1">
+                    <h4 class="font-bold text-base">{{ expense.description }}</h4>
+                    <span class="text-[10px] px-2 py-0.5 bg-surface-container-high rounded-full text-on-surface-variant font-bold uppercase tracking-wide">
+                      {{ expense.date|date:"d M" }}
+                    </span>
+                  </div>
+                  <p class="text-sm text-on-surface-variant">
+                    Paid by <span class="font-bold text-on-surface">{{ expense.paid_by.username }}</span>
+                    &nbsp;&bull;&nbsp;
+                    {% with split_count=expense.splits.all|length %}
+                      {{ split_count }} person{{ split_count|pluralize }}
+                    {% endwith %}
+                  </p>
+                  <!-- Splits -->
+                  <div class="flex flex-wrap gap-1.5 mt-2">
+                    {% for split in expense.splits.all %}
+                      <span class="inline-flex items-center gap-1 text-[10px] bg-surface-container px-2 py-0.5 rounded-full font-medium text-on-surface-variant">
+                        {{ split.user.username }} &middot; &#8377;{{ split.amount|floatformat:2 }}
+                      </span>
+                    {% empty %}
+                      <span class="text-[10px] text-on-surface-variant">—</span>
+                    {% endfor %}
+                  </div>
+                </div>
+                <!-- Amount + Delete -->
+                <div class="flex-shrink-0 text-right flex flex-col items-end gap-2">
+                  <div class="text-xl font-extrabold text-on-surface">&#8377;{{ expense.amount|floatformat:2 }}</div>
+                  {% if request.user == expense.paid_by or request.user == trip.created_by %}
+                  <form method="post" action="{% url 'delete_expense' expense.pk %}" style="margin:0;"
+                    onsubmit="return confirm('Delete this expense?')">
+                    {% csrf_token %}
+                    <button type="submit" class="text-[10px] font-bold text-red-400 hover:text-red-600 flex items-center gap-0.5 transition-colors">
+                      <span class="material-symbols-outlined text-[14px]">delete</span>
+                      Delete
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-20 bg-surface-container-lowest rounded-3xl">
+            <span class="material-symbols-outlined text-slate-300 block mb-4" style="font-size:3.5rem;">receipt_long</span>
+            <h3 class="text-xl font-bold mb-2">No expenses yet</h3>
+            <p class="text-on-surface-variant text-sm mb-6">Add your first expense to get started.</p>
+            <a href="{% url 'add_expense' trip.pk %}" class="primary-gradient text-on-primary px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all inline-flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]">add</span>
+              Add Expense
+            </a>
+          </div>
+        {% endif %}
+      </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Members + Balances + History -->
+    <div class="lg:col-span-4 space-y-6">
+
+      <!-- Members Card -->
+      <section class="bg-surface-container p-7 rounded-3xl">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant opacity-70">Trip Members</h3>
+          <span class="text-xs font-bold bg-white px-2.5 py-1 rounded-lg shadow-sm">{{ members.count }} total</span>
+        </div>
+        <div class="space-y-3">
+          {% for member in members %}
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm flex-shrink-0">
+              {{ member.username|first|upper }}
+            </div>
+            <div>
+              <p class="text-sm font-bold leading-tight">{{ member.username }}</p>
+              {% if member == trip.created_by %}
+                <p class="text-[10px] text-primary font-bold">Admin</p>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- Balances & Settle Up -->
+      <section class="bg-inverse-surface rounded-3xl overflow-hidden shadow-2xl">
+        <div class="p-7">
+          <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+            <span class="material-symbols-outlined" style="color:#9ff1f0;">insights</span>
+            Balances
+          </h3>
+          <p class="text-white/50 text-xs mb-6">Who owes whom in this trip</p>
+
+          {% if balance_list %}
+            <div class="space-y-5">
+              {% for b in balance_list %}
+
+                {% if b.debtor == request.user %}
+                <!-- YOU OWE SOMEONE -->
+                <div class="bg-white/5 rounded-2xl p-4">
+                  <div class="flex items-center justify-between mb-3">
+                    <div>
+                      <p class="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-0.5">You owe</p>
+                      <p class="text-white font-bold text-sm">{{ b.creditor.username }}</p>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-xl font-black text-white tracking-tight">&#8377;{{ b.amount|floatformat:2 }}</div>
+                    </div>
+                  </div>
+                  <!-- Settle Up toggle -->
+                  <details class="group">
+                    <summary class="cursor-pointer text-[11px] font-bold text-teal-300 flex items-center gap-1 hover:text-teal-200 transition-colors select-none">
+                      <span class="material-symbols-outlined text-[14px]">expand_more</span>
+                      Settle Up
+                    </summary>
+                    <div class="mt-3 pt-3 border-t border-white/10 space-y-4">
+                      <!-- Mark as Paid form -->
+                      <form method="post" action="{% url 'settle_up' trip.pk %}" id="settle-form-{{ b.creditor.pk }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="payee_id" value="{{ b.creditor.pk }}">
+                        <label class="text-[10px] font-bold text-white/50 uppercase tracking-wider block mb-1.5">Amount (&#8377;)</label>
+                        <div class="flex gap-2">
+                          <input type="number" name="amount" id="amt-{{ b.creditor.pk }}"
+                            value="{{ b.amount }}" step="0.01" min="0.01" max="{{ b.amount }}"
+                            class="flex-1 bg-white/10 text-white border border-white/20 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-400/40 w-0">
+                          <button type="submit"
+                            class="primary-gradient text-on-primary px-4 py-2 rounded-xl font-bold text-xs hover:opacity-90 transition-all flex-shrink-0">
+                            Mark Paid
+                          </button>
+                        </div>
+                      </form>
+                      <!-- UPI Section -->
+                      <div class="pt-3 border-t border-white/10">
+                        <p class="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-2">Pay via UPI</p>
+                        <div class="flex gap-2 mb-2">
+                          <input type="text" id="upi-{{ b.creditor.pk }}"
+                            placeholder="{{ b.creditor.username }}'s UPI ID"
+                            class="flex-1 bg-white/10 text-white border border-white/20 rounded-xl px-3 py-2 text-xs placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-teal-400/40 w-0">
+                          <button type="button"
+                            onclick="copyUPI('{{ b.creditor.pk }}')"
+                            class="flex-shrink-0 bg-white/10 text-white/70 hover:bg-white/20 border border-white/20 px-3 py-2 rounded-xl text-xs font-bold transition-all">
+                            Copy ID
+                          </button>
+                        </div>
+                        <div class="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2 mb-2">
+                          <span class="text-white/60 text-xs">Amount to pay:</span>
+                          <div class="flex items-center gap-2">
+                            <strong class="text-white text-sm">&#8377;{{ b.amount|floatformat:2 }}</strong>
+                            <button type="button" onclick="copyText('{{ b.amount }}')"
+                              class="text-[10px] bg-white/10 text-white/70 hover:bg-white/20 px-2 py-0.5 rounded-lg font-bold transition-all">
+                              Copy
+                            </button>
+                          </div>
+                        </div>
+                        <p class="text-white/30 text-[10px] leading-relaxed">
+                          1. Copy the UPI ID &rarr; open your UPI app &rarr; paste &amp; send<br>
+                          2. Come back and click Mark Paid above
+                        </p>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+
+                {% elif b.creditor == request.user %}
+                <!-- SOMEONE OWES YOU -->
+                <div class="bg-white/5 rounded-2xl p-4 flex items-center justify-between">
+                  <div>
+                    <p class="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-0.5">Owes you</p>
+                    <p class="text-white font-bold text-sm">{{ b.debtor.username }}</p>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-xl font-black tracking-tight" style="color:#9ff1f0;">&#8377;{{ b.amount|floatformat:2 }}</div>
+                  </div>
+                </div>
+
+                {% else %}
+                <!-- THIRD PARTY BALANCE -->
+                <div class="bg-white/5 rounded-2xl p-4 flex items-center justify-between">
+                  <div>
+                    <p class="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-0.5">Between members</p>
+                    <p class="text-white text-sm font-medium">
+                      <span class="font-bold">{{ b.debtor.username }}</span>
+                      <span class="text-white/40"> &rarr; </span>
+                      <span class="font-bold">{{ b.creditor.username }}</span>
+                    </p>
+                  </div>
+                  <div class="text-white font-bold text-sm">&#8377;{{ b.amount|floatformat:2 }}</div>
+                </div>
+                {% endif %}
+
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-8">
+              <span class="material-symbols-outlined text-white/20 block mb-3" style="font-size:2.5rem;">check_circle</span>
+              <p class="text-white/60 font-bold text-sm">All settled up!</p>
+              <p class="text-white/30 text-xs mt-1">No outstanding balances.</p>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- Settlement History -->
+      {% if settlements %}
+      <section class="bg-surface-container-lowest rounded-3xl p-7 shadow-sm">
+        <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant opacity-70 mb-5">Settlement History</h3>
+        <div class="space-y-3">
+          {% for s in settlements %}
+          <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+            <div class="flex items-center gap-2 text-sm">
+              <span class="font-bold">{{ s.payer.username }}</span>
+              <span class="material-symbols-outlined text-[14px] text-on-surface-variant">arrow_forward</span>
+              <span class="font-bold">{{ s.payee.username }}</span>
+            </div>
+            <span class="font-bold text-sm text-primary">&#8377;{{ s.amount|floatformat:2 }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </div>
   </div>
-</div>
+</main>
 
-{% block extra_js %}
+<!-- Mobile Bottom Navigation -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-lg border-t border-slate-100 z-50">
+  <div class="flex justify-around items-center px-2 h-16">
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[22px]">dashboard</span>
+      <span class="text-[10px] font-medium">Home</span>
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-teal-700" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+      <span class="text-[10px] font-bold">Trips</span>
+    </a>
+    <a href="{% url 'add_expense' trip.pk %}" class="flex items-center justify-center primary-gradient text-on-primary w-12 h-12 rounded-full shadow-lg -mt-6">
+      <span class="material-symbols-outlined">add</span>
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400 relative" href="{% url 'friends' %}">
+      <span class="material-symbols-outlined text-[22px]">group</span>
+      <span class="text-[10px] font-medium">Friends</span>
+      {% if pending_friend_requests_count %}
+        <span class="absolute top-0 right-0 bg-teal-500 text-white rounded-full w-4 h-4 text-[9px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+      {% endif %}
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'account_settings' %}">
+      <span class="material-symbols-outlined text-[22px]">account_circle</span>
+      <span class="text-[10px] font-medium">Account</span>
+    </a>
+  </div>
+</nav>
+
 <script>
-function copyUPI(creditorPk) {
-  var upiId = document.getElementById('upi-' + creditorPk).value.trim();
-  if (!upiId) { alert('Please enter the UPI ID first.'); return; }
-  var btn = event.target;
-  navigator.clipboard.writeText(upiId).then(function() {
-    btn.textContent = 'Copied!';
-    setTimeout(function() { btn.textContent = 'Copy ID'; }, 2000);
-  }).catch(function() {
-    var el = document.getElementById('upi-' + creditorPk);
-    el.select(); document.execCommand('copy');
-    btn.textContent = 'Copied!';
-    setTimeout(function() { btn.textContent = 'Copy ID'; }, 2000);
-  });
-}
-function copyText(text) {
-  var btn = event.target;
-  navigator.clipboard.writeText(text).then(function() {
-    btn.textContent = 'Copied!';
-    setTimeout(function() { btn.textContent = 'Copy ₹'; }, 2000);
-  }).catch(function() {
-    alert('Amount: ₹' + text);
-  });
-}
+  function copyUPI(creditorPk) {
+    var input = document.getElementById('upi-' + creditorPk);
+    var upiId = input ? input.value.trim() : '';
+    if (!upiId) { alert('Please enter the UPI ID first.'); return; }
+    var btn = event.target.closest('button');
+    navigator.clipboard.writeText(upiId).then(function () {
+      btn.textContent = 'Copied!';
+      setTimeout(function () { btn.textContent = 'Copy ID'; }, 2000);
+    }).catch(function () {
+      input.select(); document.execCommand('copy');
+      btn.textContent = 'Copied!';
+      setTimeout(function () { btn.textContent = 'Copy ID'; }, 2000);
+    });
+  }
+  function copyText(text) {
+    var btn = event.target.closest('button');
+    navigator.clipboard.writeText(String(text)).then(function () {
+      btn.textContent = 'Copied!';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
+    }).catch(function () {
+      alert('Amount: \u20B9' + text);
+    });
+  }
+
+  // PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
 </script>
-{% endblock %}
-{% endblock %}
+</body>
+</html>

@@ -1,98 +1,337 @@
-{% extends 'base.html' %}
-{% block title %}Dashboard – SplitEase{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>SplitEase | Dashboard</title>
+  <link rel="icon" type="image/jpeg" href="{% static 'icons/logo.jpg' %}"/>
+  <link rel="apple-touch-icon" href="{% static 'icons/logo.jpg' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#006a6a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SplitEase">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#006a6a",
+            "on-primary": "#e0fffe",
+            "surface": "#f5fafa",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#edf5f5",
+            "surface-container": "#e6f0f0",
+            "surface-container-high": "#e0eaeb",
+            "surface-container-highest": "#d8e5e6",
+            "on-surface": "#293435",
+            "on-surface-variant": "#556162",
+            "error": "#a83836",
+          },
+          fontFamily: {
+            "headline": ["Manrope", "sans-serif"],
+          },
+          borderRadius: {
+            "xl": "0.75rem",
+            "2xl": "1rem",
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body { font-family: 'Inter', sans-serif; background-color: #f5fafa; color: #293435; }
+    h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
+    a { text-decoration: none; color: inherit; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
 
-{% block content %}
-<div class="page-header">
-  <div>
-    <h1>{% if trips %}Welcome back{% else %}Welcome{% endif %}, {{ request.user.first_name|default:request.user.username }}!</h1>
-    <p>Here's your financial snapshot across all trips.</p>
-  </div>
-  <a href="{% url 'create_trip' %}" class="btn btn-primary">+ New Trip</a>
+<!-- PWA Install Banner -->
+<div id="pwa-install-banner" style="display:none;align-items:center;justify-content:center;gap:0.75rem;background:#163832;color:#DAF1DE;padding:0.55rem 1.25rem;font-size:0.85rem;font-weight:500;flex-wrap:wrap;">
+  <span>Install SplitEase as an app on your phone</span>
+  <button onclick="installPWA()" style="background:#235347;color:#DAF1DE;border:1px solid rgba(218,241,222,0.3);border-radius:50px;padding:0.3rem 0.9rem;font-size:0.82rem;font-weight:600;cursor:pointer;">Install</button>
+  <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:rgba(218,241,222,0.5);cursor:pointer;font-size:1.1rem;padding:0 0.25rem;line-height:1;">&#x2715;</button>
 </div>
 
-<!-- Stats -->
-<div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-label">Total Trips</div>
-    <div class="stat-value">{{ trips.count }}</div>
-  </div>
-  <div class="stat-card green">
-    <div class="stat-label">You Are Owed</div>
-    <div class="stat-value">₹{{ total_owed|floatformat:2 }}</div>
-  </div>
-  <div class="stat-card red">
-    <div class="stat-label">You Owe</div>
-    <div class="stat-value">₹{{ total_owe|floatformat:2 }}</div>
-  </div>
-  <div class="stat-card orange">
-    <div class="stat-label">Personal Spend</div>
-    <div class="stat-value">₹{{ personal_total|floatformat:2 }}</div>
-  </div>
-</div>
-
-<!-- Trips -->
-<div class="section-title">Your Trips</div>
-
-{% if trips %}
-  <div class="trips-grid">
-    {% for trip in trips %}
-    <a href="{% url 'trip_detail' trip.pk %}" class="trip-card">
-      <div class="trip-card-icon">
-        <svg width="28" height="28" viewBox="0 0 100 115" xmlns="http://www.w3.org/2000/svg">
-          <!-- Handle bar -->
-          <rect x="33" y="2" width="34" height="7" rx="3.5" fill="white"/>
-          <!-- Handle left post -->
-          <rect x="33" y="2" width="9" height="21" rx="4" fill="white"/>
-          <!-- Handle right post -->
-          <rect x="58" y="2" width="9" height="21" rx="4" fill="white"/>
-          <!-- Suitcase body -->
-          <rect x="5" y="21" width="90" height="74" rx="14" fill="white"/>
-          <!-- Airplane fuselage -->
-          <ellipse cx="50" cy="57" rx="5" ry="20" fill="#235347"/>
-          <!-- Airplane wings -->
-          <ellipse cx="50" cy="53" rx="25" ry="6" fill="#235347"/>
-          <!-- Airplane tail -->
-          <ellipse cx="50" cy="73" rx="12" ry="4" fill="#235347"/>
-          <!-- Wheels -->
-          <circle cx="23" cy="105" r="8" fill="white"/>
-          <circle cx="77" cy="105" r="8" fill="white"/>
-        </svg>
-      </div>
-      <h3>{{ trip.name|truncatechars:22 }}</h3>
-      {% if trip.description %}
-        <p class="desc">{{ trip.description|truncatechars:55 }}</p>
-      {% else %}
-        <p class="desc" style="color:#cbd5e1;">No description</p>
-      {% endif %}
-      <div class="meta">
-        <span>{{ trip.members.count }} member{{ trip.members.count|pluralize }}</span>
-        <span>₹{{ trip.total_expenses|floatformat:2 }}</span>
-      </div>
+<!-- Top NavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm">
+  <div class="flex justify-between items-center px-6 md:px-8 h-16 max-w-screen-2xl mx-auto">
+    <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5">
+      <img src="{% static 'icons/logo.jpg' %}" alt="SplitEase" class="w-8 h-8 object-contain rounded-lg">
+      <span class="text-2xl font-black text-teal-800 tracking-tighter">SplitEase</span>
     </a>
-    {% endfor %}
-  </div>
-{% else %}
-  <div class="empty-state">
-    <h3>No trips yet</h3>
-    <p>Create your first trip to start splitting expenses with friends.</p>
-    <br>
-    <a href="{% url 'create_trip' %}" class="btn btn-primary">+ Create a Trip</a>
-  </div>
-{% endif %}
-
-<!-- Personal Expenses summary -->
-<div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-    <div class="section-title" style="margin:0;">Personal Expenses</div>
-    <a href="{% url 'personal_expenses' %}" class="btn btn-outline btn-sm">View All →</a>
-  </div>
-  <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;background:linear-gradient(135deg,#f8f7ff,#f0f4ff);">
-    <div>
-      <div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Total Tracked Spend</div>
-      <div style="font-size:2rem;font-weight:800;color:var(--primary);margin-top:0.2rem;">₹{{ personal_total|floatformat:2 }}</div>
-      <div style="font-size:0.82rem;color:var(--text-muted);margin-top:0.2rem;">across all your personal expenses</div>
+    <div class="hidden md:flex items-center gap-8">
+      <a class="text-teal-700 font-bold border-b-2 border-teal-600 pb-1 text-sm" href="{% url 'dashboard' %}">Dashboard</a>
+      <a class="text-slate-500 hover:text-teal-600 transition-colors font-medium text-sm" href="{% url 'personal_expenses' %}">My Expenses</a>
+      <a class="text-slate-500 hover:text-teal-600 transition-colors font-medium text-sm relative" href="{% url 'friends' %}">
+        Friends
+        {% if pending_friend_requests_count %}
+          <span class="absolute -top-2 -right-4 bg-teal-500 text-white rounded-full w-4 h-4 text-[10px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+        {% endif %}
+      </a>
     </div>
-    <a href="{% url 'personal_expenses' %}" class="btn btn-primary">+ Log Expense</a>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'create_trip' %}" class="bg-primary text-on-primary px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 transition-all hidden sm:flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        New Trip
+      </a>
+      <a href="{% url 'account_settings' %}" class="p-2 hover:bg-slate-100 rounded-lg transition-all text-on-surface-variant">
+        <span class="material-symbols-outlined">account_circle</span>
+      </a>
+      <form method="post" action="{% url 'logout' %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="p-2 hover:bg-slate-100 rounded-lg transition-all text-on-surface-variant" title="Logout">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </form>
+    </div>
   </div>
-</div>
-{% endblock %}
+</nav>
+
+<!-- Sidebar (Desktop only) -->
+<aside class="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 bg-slate-50 border-r border-slate-100 z-40 pt-20">
+  <div class="px-6 mb-8">
+    <h2 class="text-on-surface font-black text-xl tracking-tight">SplitEase</h2>
+    <p class="text-on-surface-variant text-[10px] font-medium uppercase tracking-widest mt-0.5">Expense Management</p>
+  </div>
+  <nav class="flex-1 space-y-0.5">
+    <a class="flex items-center gap-3 px-6 py-3.5 bg-white text-teal-700 border-l-4 border-teal-600 font-bold text-sm" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[20px]">dashboard</span>
+      Dashboard
+    </a>
+    <a class="flex items-center gap-3 px-6 py-3.5 text-slate-500 hover:bg-teal-50 hover:text-teal-600 transition-all text-sm" href="{% url 'personal_expenses' %}">
+      <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+      My Expenses
+    </a>
+    <a class="flex items-center gap-3 px-6 py-3.5 text-slate-500 hover:bg-teal-50 hover:text-teal-600 transition-all text-sm" href="{% url 'friends' %}">
+      <span class="material-symbols-outlined text-[20px]">group</span>
+      Friends
+      {% if pending_friend_requests_count %}
+        <span class="ml-auto bg-teal-500 text-white rounded-full w-5 h-5 text-[10px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+      {% endif %}
+    </a>
+  </nav>
+  <div class="p-6 border-t border-slate-100 space-y-1">
+    <a class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-teal-600 transition-all rounded-lg text-sm" href="{% url 'account_settings' %}">
+      <span class="material-symbols-outlined text-[18px]">settings</span>
+      Account Settings
+    </a>
+    <form method="post" action="{% url 'logout' %}" style="margin:0;">
+      {% csrf_token %}
+      <button type="submit" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-red-500 transition-all rounded-lg text-sm w-full">
+        <span class="material-symbols-outlined text-[18px]">logout</span>
+        Logout
+      </button>
+    </form>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="lg:ml-64 pt-24 pb-28 px-5 md:px-10 max-w-7xl">
+
+  <!-- Django Flash Messages -->
+  {% if messages %}
+    <div class="mb-6 space-y-2">
+      {% for message in messages %}
+        <div class="px-4 py-3 rounded-xl text-sm font-medium
+          {% if message.tags == 'success' %}bg-teal-50 text-teal-800 border border-teal-200
+          {% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+          {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Page Header -->
+  <header class="mb-10">
+    <p class="text-on-surface-variant font-medium text-sm mb-1">Welcome back,</p>
+    <h1 class="text-4xl md:text-5xl font-black tracking-tight text-on-surface">
+      {{ request.user.first_name|default:request.user.username }}'s Overview
+    </h1>
+  </header>
+
+  <!-- Balance Bento Grid -->
+  <section class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-14">
+
+    <!-- You Are Owed — large card -->
+    <div class="md:col-span-7 bg-white rounded-2xl p-8 md:p-10 flex flex-col justify-between min-h-[260px] shadow-sm">
+      <div>
+        <span class="inline-block px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-xs font-bold mb-5 tracking-wider uppercase">Receivable</span>
+        <h3 class="text-on-surface-variant font-medium text-base mb-2">Total You Are Owed</h3>
+        <div class="text-5xl md:text-6xl font-extrabold tracking-tighter text-primary">
+          &#8377;{{ total_owed|floatformat:2 }}
+        </div>
+      </div>
+      <div class="flex items-center mt-8">
+        <a href="{% url 'friends' %}" class="ml-auto text-primary font-bold text-sm hover:underline">View Friends &rarr;</a>
+      </div>
+    </div>
+
+    <!-- You Owe — medium card -->
+    <div class="md:col-span-5 bg-surface-container-low rounded-2xl p-8 md:p-10 flex flex-col justify-between min-h-[260px]">
+      <div>
+        <span class="inline-block px-3 py-1 bg-red-50 text-red-600 rounded-full text-xs font-bold mb-5 tracking-wider uppercase">Payable</span>
+        <h3 class="text-on-surface-variant font-medium text-base mb-2">You Owe</h3>
+        <div class="text-4xl md:text-5xl font-extrabold tracking-tighter text-on-surface">
+          &#8377;{{ total_owe|floatformat:2 }}
+        </div>
+      </div>
+      <p class="text-sm text-on-surface-variant mt-8">Open a trip below to settle up with members.</p>
+    </div>
+
+    <!-- Personal Spend -->
+    <div class="md:col-span-4 bg-surface-container rounded-xl p-7 flex flex-col">
+      <span class="inline-block px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-bold mb-4 tracking-wider uppercase self-start">Personal</span>
+      <div class="text-3xl font-extrabold tracking-tighter mt-auto">&#8377;{{ personal_total|floatformat:2 }}</div>
+      <p class="text-sm text-on-surface-variant mt-1">Total personal spend tracked</p>
+      <a href="{% url 'personal_expenses' %}" class="mt-4 text-sm font-bold text-primary hover:underline">View breakdown &rarr;</a>
+    </div>
+
+    <!-- Total Trips -->
+    <div class="md:col-span-4 bg-surface-container rounded-xl p-7 flex flex-col">
+      <span class="inline-block px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-xs font-bold mb-4 tracking-wider uppercase self-start">Trips</span>
+      <div class="text-3xl font-extrabold tracking-tighter mt-auto">{{ trips.count }}</div>
+      <p class="text-sm text-on-surface-variant mt-1">Active trip{{ trips.count|pluralize }}</p>
+      <a href="{% url 'create_trip' %}" class="mt-4 text-sm font-bold text-primary hover:underline">Create new trip &rarr;</a>
+    </div>
+
+    <!-- Friends -->
+    <div class="md:col-span-4 bg-surface-container rounded-xl p-7 flex flex-col">
+      <span class="inline-block px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold mb-4 tracking-wider uppercase self-start">Friends</span>
+      <div class="flex items-center gap-2 mt-auto">
+        <span class="material-symbols-outlined text-teal-600" style="font-size:2.5rem;">group</span>
+        {% if pending_friend_requests_count %}
+          <span class="text-sm font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full">{{ pending_friend_requests_count }} pending</span>
+        {% endif %}
+      </div>
+      <p class="text-sm text-on-surface-variant mt-2">Manage your friends and requests</p>
+      <a href="{% url 'friends' %}" class="mt-4 text-sm font-bold text-primary hover:underline">Go to Friends &rarr;</a>
+    </div>
+
+  </section>
+
+  <!-- Trips Section -->
+  <section>
+    <div class="flex justify-between items-end mb-7">
+      <div>
+        <h2 class="text-3xl font-bold tracking-tight">Your Trips</h2>
+        <p class="text-on-surface-variant text-sm mt-1">Shared expenses across all your journeys.</p>
+      </div>
+      <a href="{% url 'create_trip' %}" class="text-sm font-bold text-primary px-4 py-2 hover:bg-teal-50 rounded-xl transition-all flex items-center gap-1">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        New Trip
+      </a>
+    </div>
+
+    {% if trips %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for trip in trips %}
+        <a href="{% url 'trip_detail' trip.pk %}" class="bg-white rounded-2xl p-6 flex flex-col shadow-sm hover:shadow-md transition-all group">
+          <div class="w-11 h-11 rounded-xl bg-teal-50 flex items-center justify-center mb-4 group-hover:bg-teal-100 transition-colors">
+            <span class="material-symbols-outlined text-teal-600">luggage</span>
+          </div>
+          <h4 class="text-lg font-bold mb-1">{{ trip.name|truncatechars:28 }}</h4>
+          {% if trip.description %}
+            <p class="text-on-surface-variant text-xs leading-relaxed mb-4 flex-1">{{ trip.description|truncatechars:75 }}</p>
+          {% else %}
+            <p class="text-slate-300 text-xs mb-4 flex-1">No description</p>
+          {% endif %}
+          <div class="flex justify-between items-center pt-4 border-t border-slate-100 mt-auto">
+            <div class="flex items-center gap-1 text-on-surface-variant text-xs font-medium">
+              <span class="material-symbols-outlined text-[15px]">group</span>
+              {{ trip.members.count }} member{{ trip.members.count|pluralize }}
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wide">Total</p>
+              <p class="text-sm font-bold">&#8377;{{ trip.total_expenses|floatformat:2 }}</p>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-20 bg-white rounded-2xl shadow-sm">
+        <span class="material-symbols-outlined text-slate-300 block mb-4" style="font-size:3.5rem;">luggage</span>
+        <h3 class="text-xl font-bold mb-2">No trips yet</h3>
+        <p class="text-on-surface-variant mb-6 text-sm">Create your first trip to start splitting expenses with friends.</p>
+        <a href="{% url 'create_trip' %}" class="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all inline-flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">add</span>
+          Create a Trip
+        </a>
+      </div>
+    {% endif %}
+  </section>
+
+</main>
+
+<!-- Mobile Bottom Navigation -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-lg border-t border-slate-100 z-50">
+  <div class="flex justify-around items-center px-2 h-16">
+    <a class="flex flex-col items-center gap-0.5 text-teal-700" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[22px]">dashboard</span>
+      <span class="text-[10px] font-bold">Home</span>
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'personal_expenses' %}">
+      <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+      <span class="text-[10px] font-medium">Expenses</span>
+    </a>
+    <a href="{% url 'create_trip' %}" class="flex items-center justify-center bg-primary text-on-primary w-12 h-12 rounded-full shadow-lg -mt-6">
+      <span class="material-symbols-outlined">add</span>
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400 relative" href="{% url 'friends' %}">
+      <span class="material-symbols-outlined text-[22px]">group</span>
+      <span class="text-[10px] font-medium">Friends</span>
+      {% if pending_friend_requests_count %}
+        <span class="absolute top-0 right-0 bg-teal-500 text-white rounded-full w-4 h-4 text-[9px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+      {% endif %}
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'account_settings' %}">
+      <span class="material-symbols-outlined text-[22px]">account_circle</span>
+      <span class="text-[10px] font-medium">Account</span>
+    </a>
+  </div>
+</nav>
+
+<script>
+  // PWA: Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
+  // PWA: Install banner
+  var deferredPrompt;
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (window.innerWidth <= 1024 && !isStandalone) {
+      var banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'flex';
+    }
+  });
+  function installPWA() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function () {
+      deferredPrompt = null;
+      var banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+    });
+  }
+  window.addEventListener('appinstalled', function () {
+    var banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+  });
+</script>
+</body>
+</html>

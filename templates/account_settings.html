@@ -1,78 +1,292 @@
-{% extends 'base.html' %}
-{% block title %}Account Settings – SplitEase{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Account Settings – SplitEase</title>
+  <link rel="icon" type="image/jpeg" href="{% static 'icons/logo.jpg' %}"/>
+  <link rel="apple-touch-icon" href="{% static 'icons/logo.jpg' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#006a6a">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#006a6a",
+            "on-primary": "#e0fffe",
+            "primary-container": "#9ff1f0",
+            "on-primary-container": "#005c5c",
+            "secondary-container": "#cce8e7",
+            "on-secondary-container": "#3d5656",
+            "surface": "#f5fafa",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#edf5f5",
+            "surface-container": "#e6f0f0",
+            "surface-container-high": "#e0eaeb",
+            "surface-container-highest": "#d8e5e6",
+            "on-surface": "#293435",
+            "on-surface-variant": "#556162",
+            "outline": "#717d7e",
+            "outline-variant": "#a8b4b5",
+            "error": "#a83836",
+          },
+          fontFamily: { "headline": ["Manrope", "sans-serif"] },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+    body { font-family: 'Inter', sans-serif; background-color: #f5fafa; color: #293435; }
+    h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
+    a { text-decoration: none; color: inherit; }
+    .primary-gradient { background: linear-gradient(135deg, #006a6a 0%, #005d5d 100%); }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
 
-{% block content %}
-<a href="{% url 'dashboard' %}" class="back-link">← Back to Dashboard</a>
-
-<div class="page-header">
-  <div>
-    <h1>Account Settings</h1>
-    <p>Manage your SplitEase account</p>
-  </div>
-</div>
-
-<div style="max-width:560px;">
-
-  <!-- Account Info -->
-  <div class="card" style="margin-bottom:1.5rem;">
-    <h3 style="margin-bottom:1rem;font-size:1rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Account Info</h3>
-    <div style="display:flex;flex-direction:column;gap:0.6rem;">
-      <div style="display:flex;justify-content:space-between;font-size:0.95rem;">
-        <span style="color:var(--text-muted);">Username</span>
-        <span style="font-weight:600;">{{ request.user.username }}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:0.95rem;">
-        <span style="color:var(--text-muted);">Email</span>
-        <span style="font-weight:600;">{{ request.user.email|default:"—" }}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:0.95rem;">
-        <span style="color:var(--text-muted);">Member since</span>
-        <span style="font-weight:600;">{{ request.user.date_joined|date:"N j, Y" }}</span>
-      </div>
+<!-- Top Nav -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-sm">
+  <div class="flex justify-between items-center px-6 md:px-8 h-16 max-w-screen-2xl mx-auto">
+    <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5">
+      <img src="{% static 'icons/logo.jpg' %}" alt="SplitEase" class="w-8 h-8 object-contain rounded-lg">
+      <span class="text-2xl font-black text-teal-800 tracking-tighter">SplitEase</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8">
+      <a class="text-slate-500 hover:text-teal-600 transition-colors font-medium text-sm" href="{% url 'dashboard' %}">Dashboard</a>
+      <a class="text-slate-500 hover:text-teal-600 transition-colors font-medium text-sm" href="{% url 'personal_expenses' %}">My Expenses</a>
+      <a class="text-slate-500 hover:text-teal-600 transition-colors font-medium text-sm relative" href="{% url 'friends' %}">
+        Friends
+        {% if pending_friend_requests_count %}
+          <span class="absolute -top-2 -right-4 bg-teal-500 text-white rounded-full w-4 h-4 text-[10px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+        {% endif %}
+      </a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <span class="p-2 text-teal-700 rounded-lg">
+        <span class="material-symbols-outlined">account_circle</span>
+      </span>
+      <form method="post" action="{% url 'logout' %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="p-2 hover:bg-slate-100 rounded-lg transition-all text-on-surface-variant" title="Logout">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </form>
     </div>
   </div>
+</header>
 
-  <!-- Danger Zone -->
-  <div class="card" style="border:1.5px solid #FCA5A5;">
-    <h3 style="margin-bottom:0.4rem;font-size:1rem;color:#C62828;font-weight:700;">⚠️ Danger Zone</h3>
-    <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1.25rem;">
-      Permanently deletes your account and all associated data — trips you created, expenses, personal logs, and friend connections. <strong>This cannot be undone.</strong>
+<main class="pt-24 pb-28 px-5 md:px-12 max-w-7xl mx-auto min-h-screen">
+
+  <!-- Django Messages -->
+  {% if messages %}
+    <div class="mb-8 space-y-2">
+      {% for message in messages %}
+        <div class="px-4 py-3 rounded-xl text-sm font-medium
+          {% if message.tags == 'success' %}bg-teal-50 text-teal-800 border border-teal-200
+          {% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+          {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Page Header -->
+  <div class="mb-14">
+    <h1 class="text-5xl md:text-6xl font-extrabold tracking-tighter text-on-surface mb-4">Account Settings</h1>
+    <p class="text-on-surface-variant text-base font-light max-w-2xl leading-relaxed">
+      Manage your SplitEase account details and security preferences.
     </p>
-
-    <form method="post" action="{% url 'delete_account' %}" onsubmit="return confirmDelete(event)">
-      {% csrf_token %}
-      <label style="font-size:0.88rem;font-weight:600;color:var(--text);display:block;margin-bottom:0.5rem;">
-        Type your username <strong>{{ request.user.username }}</strong> to confirm:
-      </label>
-      <input type="text" name="confirm_username" id="confirm-input"
-        class="form-control" placeholder="Enter username"
-        style="margin-bottom:0.85rem;" autocomplete="off">
-      <button type="submit" id="delete-btn" class="btn"
-        style="background:#C62828;color:#fff;border:none;opacity:0.4;cursor:not-allowed;"
-        disabled>
-        Delete My Account Permanently
-      </button>
-    </form>
   </div>
 
-</div>
-{% endblock %}
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
-{% block extra_js %}
+    <!-- Left Nav Tabs -->
+    <aside class="lg:col-span-3">
+      <nav class="flex flex-col gap-1">
+        <div class="flex items-center gap-3 px-4 py-3 bg-surface-container-highest text-primary font-bold rounded-xl">
+          <span class="material-symbols-outlined text-[20px]">person</span>
+          <span class="text-sm">Profile Information</span>
+        </div>
+        <div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant rounded-xl opacity-50 cursor-default select-none">
+          <span class="material-symbols-outlined text-[20px]">shield</span>
+          <span class="text-sm">Security</span>
+        </div>
+        <div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant rounded-xl opacity-50 cursor-default select-none">
+          <span class="material-symbols-outlined text-[20px]">notifications_active</span>
+          <span class="text-sm">Notifications</span>
+        </div>
+        <div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant rounded-xl opacity-50 cursor-default select-none">
+          <span class="material-symbols-outlined text-[20px]">payments</span>
+          <span class="text-sm">Preferences</span>
+        </div>
+      </nav>
+
+      <!-- Back link -->
+      <a href="{% url 'dashboard' %}"
+        class="mt-8 flex items-center gap-2 px-4 py-2.5 text-sm text-on-surface-variant hover:text-primary transition-colors rounded-xl hover:bg-surface-container-low">
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+        Back to Dashboard
+      </a>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="lg:col-span-9 space-y-12">
+
+      <!-- Profile Information Section -->
+      <section class="bg-surface-container-lowest p-8 md:p-10 rounded-2xl shadow-sm">
+        <div class="flex flex-col md:flex-row gap-10 items-start">
+
+          <!-- Avatar -->
+          <div class="flex-shrink-0">
+            <div class="w-24 h-24 rounded-full primary-gradient flex items-center justify-center text-on-primary font-black text-3xl select-none shadow-lg">
+              {{ request.user.username|first|upper }}
+            </div>
+          </div>
+
+          <!-- Info fields (read-only) -->
+          <div class="flex-1 w-full space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Username</label>
+                <div class="bg-surface-container-high rounded-xl px-4 py-3 text-sm font-semibold text-on-surface">
+                  {{ request.user.username }}
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Email Address</label>
+                <div class="bg-surface-container-high rounded-xl px-4 py-3 text-sm font-semibold text-on-surface">
+                  {{ request.user.email|default:"—" }}
+                </div>
+              </div>
+
+              {% if request.user.first_name %}
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">First Name</label>
+                <div class="bg-surface-container-high rounded-xl px-4 py-3 text-sm font-semibold text-on-surface">
+                  {{ request.user.first_name }}
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Last Name</label>
+                <div class="bg-surface-container-high rounded-xl px-4 py-3 text-sm font-semibold text-on-surface">
+                  {{ request.user.last_name|default:"—" }}
+                </div>
+              </div>
+              {% endif %}
+
+              <div class="space-y-1.5 md:col-span-2">
+                <label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Member Since</label>
+                <div class="flex items-center gap-3 py-3 text-sm">
+                  <span class="material-symbols-outlined text-primary text-[20px]">calendar_today</span>
+                  <span class="font-semibold">{{ request.user.date_joined|date:"N j, Y" }}</span>
+                  <span class="ml-auto text-xs text-on-surface-variant italic">Account in good standing</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Danger Zone -->
+      <section class="pt-10 border-t border-surface-container-highest">
+        <div class="bg-red-50/60 border border-red-100 p-8 md:p-10 rounded-2xl space-y-6">
+          <div>
+            <h3 class="text-xl font-bold text-error mb-2">Danger Zone</h3>
+            <p class="text-on-surface-variant text-sm leading-relaxed max-w-xl">
+              Permanently deletes your account and all associated data — trips you created, expenses, personal logs, and friend connections. <strong class="text-on-surface">This cannot be undone.</strong>
+            </p>
+          </div>
+
+          <form method="post" action="{% url 'delete_account' %}" onsubmit="return confirmDelete(event)">
+            {% csrf_token %}
+            <div class="space-y-4 max-w-sm">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant" for="confirm-input">
+                  Type <strong class="text-on-surface">{{ request.user.username }}</strong> to confirm
+                </label>
+                <input type="text" name="confirm_username" id="confirm-input"
+                  placeholder="Enter your username"
+                  autocomplete="off"
+                  class="w-full bg-white border border-red-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-red-300/40 focus:outline-none transition-all placeholder:text-slate-400"/>
+              </div>
+              <button type="submit" id="delete-btn" disabled
+                class="w-full bg-error text-white px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                style="opacity:0.4;cursor:not-allowed;">
+                <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+                Delete My Account Permanently
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<!-- Mobile Bottom Nav -->
+<nav class="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-lg border-t border-slate-100 z-50">
+  <div class="flex justify-around items-center px-2 h-16">
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[22px]">dashboard</span>
+      <span class="text-[10px] font-medium">Home</span>
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'personal_expenses' %}">
+      <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+      <span class="text-[10px] font-medium">Expenses</span>
+    </a>
+    <a href="{% url 'dashboard' %}" class="flex items-center justify-center primary-gradient text-on-primary w-12 h-12 rounded-full shadow-lg -mt-6">
+      <span class="material-symbols-outlined">home</span>
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400 relative" href="{% url 'friends' %}">
+      <span class="material-symbols-outlined text-[22px]">group</span>
+      <span class="text-[10px] font-medium">Friends</span>
+      {% if pending_friend_requests_count %}
+        <span class="absolute top-0 right-0 bg-teal-500 text-white rounded-full w-4 h-4 text-[9px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+      {% endif %}
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-teal-700" href="{% url 'account_settings' %}">
+      <span class="material-symbols-outlined text-[22px]">account_circle</span>
+      <span class="text-[10px] font-bold">Account</span>
+    </a>
+  </div>
+</nav>
+
 <script>
-  var input = document.getElementById('confirm-input');
-  var btn = document.getElementById('delete-btn');
+  var input    = document.getElementById('confirm-input');
+  var btn      = document.getElementById('delete-btn');
   var expected = "{{ request.user.username }}";
 
-  input.addEventListener('input', function() {
+  input.addEventListener('input', function () {
     var match = this.value === expected;
     btn.disabled = !match;
     btn.style.opacity = match ? '1' : '0.4';
-    btn.style.cursor = match ? 'pointer' : 'not-allowed';
+    btn.style.cursor  = match ? 'pointer' : 'not-allowed';
   });
 
   function confirmDelete(e) {
     return confirm('Are you absolutely sure? This will permanently delete your account and cannot be undone.');
   }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
 </script>
-{% endblock %}
+</body>
+</html>

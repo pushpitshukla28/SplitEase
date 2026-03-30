@@ -1,142 +1,345 @@
-{% extends 'base.html' %}
-{% block title %}Add Expense – {{ trip.name }}{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Add Expense – {{ trip.name }} | SplitEase</title>
+  <link rel="icon" type="image/jpeg" href="{% static 'icons/logo.jpg' %}"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#006a6a",
+            "on-primary": "#e0fffe",
+            "primary-container": "#9ff1f0",
+            "on-primary-container": "#005c5c",
+            "surface": "#f5fafa",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#edf5f5",
+            "surface-container": "#e6f0f0",
+            "surface-container-high": "#e0eaeb",
+            "surface-container-highest": "#d8e5e6",
+            "on-surface": "#293435",
+            "on-surface-variant": "#556162",
+            "outline": "#717d7e",
+            "outline-variant": "#a8b4b5",
+            "error": "#a83836",
+          },
+          fontFamily: {
+            "headline": ["Manrope", "sans-serif"],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+    body { font-family: 'Inter', sans-serif; background-color: #f5fafa; color: #293435; }
+    h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
+    a { text-decoration: none; color: inherit; }
+    .primary-gradient { background: linear-gradient(135deg, #006a6a 0%, #005d5d 100%); }
 
-{% block content %}
-<a href="{% url 'trip_detail' trip.pk %}" class="back-link">← Back to {{ trip.name }}</a>
+    /* Member card checked state */
+    .member-card { transition: all 0.15s ease; }
+    .member-card.is-checked {
+      border-left: 3px solid #006a6a;
+      background: white;
+    }
 
-<div class="page-header">
-  <div>
-    <h1>Add Expense</h1>
-    <p>Trip: <strong>{{ trip.name }}</strong></p>
+    /* Custom amount input inside card */
+    .custom-amt {
+      display: none;
+      background: #e6f0f0;
+      border: 1px solid #a8b4b5;
+      border-radius: 0.5rem;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      width: 100px;
+      text-align: right;
+      color: #293435;
+    }
+    .custom-amt:focus { outline: 2px solid #006a6a; border-color: #006a6a; }
+
+    /* Amount input — suppress number arrows */
+    #id_amount::-webkit-inner-spin-button,
+    #id_amount::-webkit-outer-spin-button { -webkit-appearance: none; }
+    #id_amount { -moz-appearance: textfield; }
+
+    /* Hide scrollbar for member list */
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
+
+<!-- Top Navigation -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm h-16">
+  <div class="flex justify-between items-center px-6 md:px-8 h-full max-w-screen-2xl mx-auto">
+    <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5">
+      <img src="{% static 'icons/logo.jpg' %}" alt="SplitEase" class="w-8 h-8 object-contain rounded-lg">
+      <span class="text-2xl font-black text-teal-800 tracking-tighter">SplitEase</span>
+    </a>
+    <div class="hidden md:flex items-center gap-2 text-on-surface-variant text-xs">
+      <a href="{% url 'dashboard' %}" class="hover:text-primary transition-colors">Dashboard</a>
+      <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+      <a href="{% url 'trip_detail' trip.pk %}" class="hover:text-primary transition-colors">{{ trip.name }}</a>
+      <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+      <span class="text-primary font-semibold">Add Expense</span>
+    </div>
+    <a href="{% url 'trip_detail' trip.pk %}" class="primary-gradient text-on-primary px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 hover:opacity-90 transition-all">
+      <span class="material-symbols-outlined text-[16px]">close</span>
+      Exit
+    </a>
   </div>
-</div>
+</nav>
 
-<div style="max-width:600px;">
-  <div class="card">
-    <form method="post">
-      {% csrf_token %}
+<!-- Split-Pane Form -->
+<form method="post" id="expense-form">
+  {% csrf_token %}
 
-      <div class="form-group">
-        <label class="form-label" for="id_description">Description *</label>
-        <input type="text" name="description" id="id_description" class="form-control"
-          value="{{ form.description.value|default:'' }}" required
-          placeholder="e.g. Dinner at the beach">
-        {% if form.description.errors %}
-          <ul class="errorlist">{% for e in form.description.errors %}<li>{{ e }}</li>{% endfor %}</ul>
-        {% endif %}
-      </div>
+  <main class="pt-16 min-h-screen flex flex-col lg:flex-row">
 
-      <div class="two-col">
-        <div class="form-group">
-          <label class="form-label" for="id_amount">Amount (₹) *</label>
-          <input type="number" name="amount" id="id_amount" class="form-control"
-            value="{{ form.amount.value|default:'' }}" step="0.01" min="0.01" required
-            placeholder="0.00">
+    <!-- LEFT PANE: Amount + Details -->
+    <section class="flex-1 flex flex-col justify-center items-center px-6 md:px-12 py-12 lg:py-0 bg-surface">
+      <div class="max-w-md w-full space-y-10">
+
+        <header class="space-y-2">
+          <span class="text-primary font-bold tracking-widest text-xs uppercase">New Expense</span>
+          <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface">{{ trip.name }}</h1>
+          <p class="text-on-surface-variant text-sm">Enter the total amount and who paid. Split is handled on the right.</p>
+        </header>
+
+        <!-- Amount -->
+        <div class="space-y-2">
+          <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Amount (&#8377;) *</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 font-black text-3xl font-headline pointer-events-none">&#8377;</span>
+            <input type="number" name="amount" id="id_amount"
+              value="{{ form.amount.value|default:'' }}"
+              step="0.01" min="0.01" required
+              placeholder="0.00"
+              class="w-full bg-transparent border-b-2 border-surface-container-high focus:border-primary text-right text-6xl font-black font-headline focus:ring-0 pl-12 pr-2 pb-2 transition-colors placeholder:text-surface-container-highest text-on-surface"/>
+          </div>
           {% if form.amount.errors %}
-            <ul class="errorlist">{% for e in form.amount.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            <p class="text-error text-xs font-medium">{% for e in form.amount.errors %}{{ e }}{% endfor %}</p>
           {% endif %}
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="id_date">Date *</label>
-          <input type="date" name="date" id="id_date" class="form-control"
-            value="{{ form.date.value|default:'' }}" required>
-          {% if form.date.errors %}
-            <ul class="errorlist">{% for e in form.date.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        <!-- Paid By + Date row -->
+        <div class="grid grid-cols-2 gap-4">
+
+          <!-- Paid By -->
+          <div class="space-y-2">
+            <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest" for="id_paid_by">Paid By *</label>
+            <div class="bg-surface-container-low rounded-xl p-3.5 flex items-center gap-3 hover:bg-surface-container transition-all">
+              <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm flex-shrink-0">
+                <span class="material-symbols-outlined text-[18px]">person</span>
+              </div>
+              <select name="paid_by" id="id_paid_by" required
+                class="bg-transparent border-none focus:ring-0 text-sm font-semibold text-on-surface w-full p-0 cursor-pointer">
+                <option value="">-- Select --</option>
+                {% for member in form.paid_by.field.queryset %}
+                  <option value="{{ member.pk }}"
+                    {% if form.paid_by.value|stringformat:"s" == member.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ member.username }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            {% if form.paid_by.errors %}
+              <p class="text-error text-xs font-medium">{% for e in form.paid_by.errors %}{{ e }}{% endfor %}</p>
+            {% endif %}
+          </div>
+
+          <!-- Date -->
+          <div class="space-y-2">
+            <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest" for="id_date">Date *</label>
+            <div class="bg-surface-container-low rounded-xl p-3.5 flex items-center gap-3 hover:bg-surface-container transition-all">
+              <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm flex-shrink-0">
+                <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+              </div>
+              <input type="date" name="date" id="id_date" required
+                value="{{ form.date.value|default:'' }}"
+                class="bg-transparent border-none focus:ring-0 text-sm font-semibold text-on-surface w-full p-0 cursor-pointer"/>
+            </div>
+            {% if form.date.errors %}
+              <p class="text-error text-xs font-medium">{% for e in form.date.errors %}{{ e }}{% endfor %}</p>
+            {% endif %}
+          </div>
+
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-2">
+          <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest" for="id_description">Description *</label>
+          <input type="text" name="description" id="id_description" required
+            value="{{ form.description.value|default:'' }}"
+            placeholder="What was this for?"
+            class="w-full bg-surface-container-high border-none rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-primary/20 placeholder:text-outline transition-all"/>
+          {% if form.description.errors %}
+            <p class="text-error text-xs font-medium">{% for e in form.description.errors %}{{ e }}{% endfor %}</p>
           {% endif %}
         </div>
+
       </div>
+    </section>
 
-      <div class="form-group">
-        <label class="form-label" for="id_paid_by">Paid By *</label>
-        <select name="paid_by" id="id_paid_by" class="form-control" required>
-          <option value="">-- Select member --</option>
-          {% for member in form.paid_by.field.queryset %}
-            <option value="{{ member.pk }}"
-              {% if form.paid_by.value|stringformat:"s" == member.pk|stringformat:"s" %}selected{% endif %}>
-              {{ member.username }}{% if member.get_full_name %} ({{ member.get_full_name }}){% endif %}
-            </option>
-          {% endfor %}
-        </select>
-        {% if form.paid_by.errors %}
-          <ul class="errorlist">{% for e in form.paid_by.errors %}<li>{{ e }}</li>{% endfor %}</ul>
-        {% endif %}
-      </div>
+    <!-- RIGHT PANE: Split Between -->
+    <section class="w-full lg:w-[480px] bg-surface-container-low px-6 md:px-8 py-10 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-white/10">
+      <div class="space-y-8">
 
-      <div class="form-group">
-        <label class="form-label">Split Between *</label>
-
-        <!-- Split type toggle -->
-        <div style="display:flex;gap:1.5rem;margin-bottom:0.85rem;padding:0.6rem 0.85rem;background:#EDF7EF;border-radius:10px;border:1px solid var(--border);">
-          <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;font-weight:600;color:var(--text);">
-            <input type="radio" name="split_type" value="equal" id="split-equal" checked> Equal split
-          </label>
-          <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;font-weight:600;color:var(--text);">
-            <input type="radio" name="split_type" value="custom" id="split-custom"> Custom amounts
-          </label>
+        <!-- Split Type Toggle -->
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">Split Between</h2>
+          <div class="flex bg-surface-container p-1 rounded-xl gap-1">
+            <label class="cursor-pointer">
+              <input type="radio" name="split_type" value="equal" id="split-equal" class="sr-only" checked>
+              <span id="label-equal" class="px-4 py-1.5 text-xs font-bold bg-white text-primary rounded-lg shadow-sm block transition-all">Equal</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="split_type" value="custom" id="split-custom" class="sr-only">
+              <span id="label-custom" class="px-4 py-1.5 text-xs font-bold text-on-surface-variant hover:text-on-surface block transition-all">Custom</span>
+            </label>
+          </div>
         </div>
 
-        <label id="select-all-wrap" style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--primary);margin-bottom:0.5rem;cursor:pointer;">
-          <input type="checkbox" id="select-all-members"> Select All
+        <!-- Select All (equal mode only) -->
+        <label id="select-all-wrap" class="flex items-center gap-2 text-sm font-semibold text-primary cursor-pointer select-none">
+          <input type="checkbox" id="select-all-members" class="rounded text-primary focus:ring-primary">
+          Select All Members
         </label>
 
-        <div class="checkbox-list" id="members-list">
+        <!-- Custom total feedback bar (custom mode only) -->
+        <div id="custom-total-bar" class="hidden bg-surface-container rounded-xl px-4 py-3 text-sm space-y-1">
+          <p class="text-[11px] text-on-surface-variant font-medium">Each person's share must add up to the total.</p>
+          <div class="flex items-center justify-between font-bold">
+            <span class="text-on-surface-variant text-xs">Assigned</span>
+            <span>&#8377;<span id="custom-total">0.00</span> / &#8377;<span id="expense-total-display">0.00</span>
+              <span id="total-status" class="ml-2 text-xs"></span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Member List -->
+        <div class="space-y-3 max-h-96 overflow-y-auto pr-1 hide-scrollbar" id="members-list">
           {% for choice in form.split_members %}
-            <label id="member-row-{{ choice.data.value }}" style="justify-content:space-between;">
-              <div style="display:flex;align-items:center;gap:0.6rem;">
-                <input type="checkbox" name="split_members" value="{{ choice.data.value }}"
-                  class="member-checkbox"
-                  {% if choice.data.value|stringformat:"s" in form.split_members.value|default_if_none:"" %}checked{% endif %}>
-                <span>{{ choice.choice_label }}</span>
-              </div>
-              <input type="number" name="custom_{{ choice.data.value }}"
-                class="custom-amt form-control"
-                style="display:none;width:110px;text-align:right;"
-                step="0.01" min="0" placeholder="their share">
-            </label>
+          <label id="member-row-{{ choice.data.value }}"
+            class="member-card flex items-center gap-4 bg-surface-container rounded-2xl p-4 cursor-pointer hover:bg-surface-container-high transition-all">
+
+            <!-- Hidden checkbox (actual form input) -->
+            <input type="checkbox" name="split_members" value="{{ choice.data.value }}"
+              class="member-checkbox sr-only"
+              {% if choice.data.value|stringformat:"s" in form.split_members.value|default_if_none:"" %}checked{% endif %}>
+
+            <!-- Avatar -->
+            <div class="w-11 h-11 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm flex-shrink-0">
+              {{ choice.choice_label|first|upper }}
+            </div>
+
+            <!-- Name -->
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-sm truncate">{{ choice.choice_label }}</p>
+              <p class="text-[10px] text-on-surface-variant font-medium member-role">Splittee</p>
+            </div>
+
+            <!-- Equal share display -->
+            <div class="equal-share-display text-right flex-shrink-0">
+              <p class="text-xs text-on-surface-variant font-medium mb-0.5">Share</p>
+              <p class="font-bold text-sm text-primary member-share">&#8377;0.00</p>
+            </div>
+
+            <!-- Custom amount input -->
+            <input type="number"
+              name="custom_{{ choice.data.value }}"
+              class="custom-amt flex-shrink-0"
+              step="0.01" min="0" placeholder="share">
+
+            <!-- Check indicator -->
+            <div class="check-icon flex-shrink-0 w-5 h-5 rounded-full border-2 border-outline-variant flex items-center justify-center transition-all">
+              <span class="material-symbols-outlined text-[14px] text-primary opacity-0 check-tick">check</span>
+            </div>
+
+          </label>
           {% endfor %}
         </div>
 
-        <!-- Custom split total feedback -->
-        <div id="custom-total-bar" style="display:none;margin-top:0.6rem;padding:0.6rem 0.85rem;border-radius:8px;font-size:0.85rem;font-weight:600;background:#EDF7EF;border:1px solid var(--border);">
-          <div style="font-size:0.75rem;color:var(--text-muted);font-weight:500;margin-bottom:0.3rem;">Enter each person's share — amounts must add up to the total.</div>
-          Assigned: ₹<span id="custom-total">0.00</span> &nbsp;/&nbsp; Total: ₹<span id="expense-total-display">0.00</span>
-          <span id="total-status" style="margin-left:0.5rem;"></span>
+      </div>
+
+      <!-- Summary + Submit -->
+      <div class="mt-8 space-y-4">
+        <!-- Summary -->
+        <div class="bg-surface-container rounded-2xl p-5 space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-on-surface-variant font-medium">Total Amount</span>
+            <span class="font-bold" id="summary-total">&#8377;0.00</span>
+          </div>
+          <div class="flex justify-between items-center text-sm" id="equal-summary-row">
+            <span class="text-on-surface-variant font-medium">Per Person</span>
+            <span class="font-bold text-primary" id="summary-per-person">&#8377;0.00</span>
+          </div>
+          <div class="h-px bg-surface-container-highest"></div>
+          <div class="flex justify-between items-center">
+            <span class="font-bold font-headline">Split Among</span>
+            <span class="font-black text-lg font-headline" id="summary-count">0 members</span>
+          </div>
         </div>
 
+        <!-- Submit -->
+        <button type="submit" id="save-btn"
+          class="w-full primary-gradient text-on-primary py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/20 flex items-center justify-center gap-3 group active:scale-[0.98] transition-all">
+          Save Expense
+          <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </button>
+
+        <a href="{% url 'trip_detail' trip.pk %}"
+          class="block w-full text-center py-3 rounded-2xl font-bold text-sm text-on-surface-variant bg-surface-container hover:bg-surface-container-high transition-all">
+          Cancel
+        </a>
+
         {% if form.split_members.errors %}
-          <ul class="errorlist">{% for e in form.split_members.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+          <p class="text-error text-xs font-medium text-center">{% for e in form.split_members.errors %}{{ e }}{% endfor %}</p>
         {% endif %}
       </div>
+    </section>
 
-      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
-        <button type="submit" id="save-btn" class="btn btn-success">Save Expense</button>
-        <a href="{% url 'trip_detail' trip.pk %}" class="btn btn-outline">Cancel</a>
-      </div>
-    </form>
-  </div>
-</div>
-{% endblock %}
+  </main>
+</form>
 
-{% block extra_js %}
 <script>
+  // ── DOM refs ──────────────────────────────────────────────────────────────
+  var equalRadio       = document.getElementById('split-equal');
+  var customRadio      = document.getElementById('split-custom');
+  var labelEqual       = document.getElementById('label-equal');
+  var labelCustom      = document.getElementById('label-custom');
+  var selectAllWrap    = document.getElementById('select-all-wrap');
+  var customTotalBar   = document.getElementById('custom-total-bar');
+  var customTotalSpan  = document.getElementById('custom-total');
+  var expTotalSpan     = document.getElementById('expense-total-display');
+  var totalStatus      = document.getElementById('total-status');
+  var amountInput      = document.getElementById('id_amount');
+  var saveBtn          = document.getElementById('save-btn');
+  var summaryTotal     = document.getElementById('summary-total');
+  var summaryPerPerson = document.getElementById('summary-per-person');
+  var summaryCount     = document.getElementById('summary-count');
+  var equalSummaryRow  = document.getElementById('equal-summary-row');
+
   // Set max date to today
-  var t = new Date(); var pad = function(n){return String(n).padStart(2,'0');};
-  document.getElementById('id_date').setAttribute('max', t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate()));
+  (function() {
+    var t = new Date(), pad = function(n){ return String(n).padStart(2,'0'); };
+    document.getElementById('id_date').setAttribute('max',
+      t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate()));
+  })();
 
-  var equalRadio    = document.getElementById('split-equal');
-  var customRadio   = document.getElementById('split-custom');
-  var selectAllWrap = document.getElementById('select-all-wrap');
-  var customTotalBar = document.getElementById('custom-total-bar');
-  var customTotalSpan = document.getElementById('custom-total');
-  var expenseTotalSpan = document.getElementById('expense-total-display');
-  var totalStatus   = document.getElementById('total-status');
-  var amountInput   = document.getElementById('id_amount');
-  var saveBtn       = document.getElementById('save-btn');
-
-  function getExpenseTotal() {
-    return parseFloat(amountInput.value) || 0;
-  }
+  function getExpenseTotal() { return parseFloat(amountInput.value) || 0; }
 
   function setSaveEnabled(enabled) {
     saveBtn.disabled = !enabled;
@@ -144,84 +347,184 @@
     saveBtn.style.cursor  = enabled ? 'pointer' : 'not-allowed';
   }
 
+  // ── Card visual state ─────────────────────────────────────────────────────
+  function updateCardState(card, checked) {
+    var tick = card.querySelector('.check-tick');
+    var icon = card.querySelector('.check-icon');
+    if (checked) {
+      card.classList.add('is-checked');
+      if (tick)  tick.style.opacity = '1';
+      if (icon) { icon.style.borderColor = '#006a6a'; icon.style.background = '#e6f0f0'; }
+    } else {
+      card.classList.remove('is-checked');
+      if (tick)  tick.style.opacity = '0';
+      if (icon) { icon.style.borderColor = ''; icon.style.background = ''; }
+    }
+  }
+
+  // Initialise card states on load
+  document.querySelectorAll('.member-checkbox').forEach(function(cb) {
+    updateCardState(cb.closest('label'), cb.checked);
+  });
+
+  // ── Equal split helpers ───────────────────────────────────────────────────
+  function getCheckedCount() {
+    return document.querySelectorAll('.member-checkbox:checked').length;
+  }
+
+  function updateEqualShares() {
+    var total   = getExpenseTotal();
+    var checked = getCheckedCount();
+    var share   = (checked > 0 && total > 0) ? (total / checked) : 0;
+    document.querySelectorAll('.member-share').forEach(function(el) {
+      el.textContent = '\u20B9' + share.toFixed(2);
+    });
+    summaryTotal.textContent     = '\u20B9' + total.toFixed(2);
+    summaryPerPerson.textContent = '\u20B9' + share.toFixed(2);
+    summaryCount.textContent     = checked + ' member' + (checked !== 1 ? 's' : '');
+  }
+
+  // ── Custom split helpers ──────────────────────────────────────────────────
   function updateCustomTotal() {
-    var total = 0;
+    var assigned = 0;
     document.querySelectorAll('.custom-amt').forEach(function(inp) {
-      if (inp.style.display !== 'none') total += parseFloat(inp.value) || 0;
+      if (inp.style.display !== 'none') assigned += parseFloat(inp.value) || 0;
     });
     var expTotal = getExpenseTotal();
-    customTotalSpan.textContent  = total.toFixed(2);
-    expenseTotalSpan.textContent = expTotal.toFixed(2);
-    var diff = Math.abs(total - expTotal);
+    customTotalSpan.textContent = assigned.toFixed(2);
+    expTotalSpan.textContent    = expTotal.toFixed(2);
+    summaryTotal.textContent    = '\u20B9' + expTotal.toFixed(2);
+    summaryCount.textContent    = document.querySelectorAll('.member-checkbox:checked').length + ' members';
+    var diff = Math.abs(assigned - expTotal);
     if (expTotal === 0) {
       totalStatus.textContent = '';
+      totalStatus.style.color = '';
       setSaveEnabled(false);
     } else if (diff < 0.01) {
       totalStatus.textContent = '✓ Balanced';
-      totalStatus.style.color = 'var(--secondary)';
+      totalStatus.style.color = '#006a6a';
       setSaveEnabled(true);
-    } else if (total > expTotal) {
-      totalStatus.textContent = '↑ Over by ₹' + (total - expTotal).toFixed(2);
-      totalStatus.style.color = 'var(--danger)';
+    } else if (assigned > expTotal) {
+      totalStatus.textContent = '\u2191 Over by \u20B9' + (assigned - expTotal).toFixed(2);
+      totalStatus.style.color = '#a83836';
       setSaveEnabled(false);
     } else {
-      totalStatus.textContent = '↓ Under by ₹' + (expTotal - total).toFixed(2);
-      totalStatus.style.color = 'var(--warning)';
+      totalStatus.textContent = '\u2193 Under by \u20B9' + (expTotal - assigned).toFixed(2);
+      totalStatus.style.color = '#b45309';
       setSaveEnabled(false);
     }
   }
 
+  // ── Mode switching ────────────────────────────────────────────────────────
   function setEqualMode() {
+    labelEqual.classList.add('bg-white', 'text-primary', 'shadow-sm');
+    labelEqual.classList.remove('text-on-surface-variant');
+    labelCustom.classList.remove('bg-white', 'text-primary', 'shadow-sm');
+    labelCustom.classList.add('text-on-surface-variant');
+
     selectAllWrap.style.display = 'flex';
-    customTotalBar.style.display = 'none';
+    customTotalBar.classList.add('hidden');
+    equalSummaryRow.style.display = '';
+
     document.querySelectorAll('.custom-amt').forEach(function(inp) {
       inp.style.display = 'none';
       inp.value = '';
     });
-    setSaveEnabled(true); // equal mode is always valid once members selected
+    document.querySelectorAll('.equal-share-display').forEach(function(el) {
+      el.style.display = '';
+    });
+    setSaveEnabled(true);
+    updateEqualShares();
   }
 
   function setCustomMode() {
+    labelCustom.classList.add('bg-white', 'text-primary', 'shadow-sm');
+    labelCustom.classList.remove('text-on-surface-variant');
+    labelEqual.classList.remove('bg-white', 'text-primary', 'shadow-sm');
+    labelEqual.classList.add('text-on-surface-variant');
+
     selectAllWrap.style.display = 'none';
-    customTotalBar.style.display = 'block';
-    // Auto-check ALL members and show their amount inputs
+    customTotalBar.classList.remove('hidden');
+    equalSummaryRow.style.display = 'none';
+
+    // Auto-check all members and show their inputs
     document.querySelectorAll('.member-checkbox').forEach(function(cb) {
       cb.checked = true;
+      updateCardState(cb.closest('label'), true);
       cb.closest('label').querySelector('.custom-amt').style.display = 'block';
     });
-    updateCustomTotal(); // will disable save until balanced
+    document.querySelectorAll('.equal-share-display').forEach(function(el) {
+      el.style.display = 'none';
+    });
+    updateCustomTotal();
   }
 
   equalRadio.addEventListener('change',  function() { if (this.checked) setEqualMode(); });
   customRadio.addEventListener('change', function() { if (this.checked) setCustomMode(); });
 
-  // When a member checkbox is toggled in custom mode, show/hide their amount input
+  // Styled radio toggle on click
+  document.getElementById('label-equal').closest('label').addEventListener('click', function() {
+    equalRadio.checked = true; setEqualMode();
+  });
+  document.getElementById('label-custom').closest('label').addEventListener('click', function() {
+    customRadio.checked = true; setCustomMode();
+  });
+
+  // ── Member checkbox interactions ──────────────────────────────────────────
   document.querySelectorAll('.member-checkbox').forEach(function(cb) {
     cb.addEventListener('change', function() {
+      updateCardState(this.closest('label'), this.checked);
       if (customRadio.checked) {
         var inp = this.closest('label').querySelector('.custom-amt');
         inp.style.display = this.checked ? 'block' : 'none';
         if (!this.checked) inp.value = '';
         updateCustomTotal();
+      } else {
+        updateEqualShares();
       }
     });
   });
 
-  // Re-check balance whenever an amount or the total changes
+  // Click anywhere on card toggles the checkbox
+  document.querySelectorAll('.member-card').forEach(function(card) {
+    card.addEventListener('click', function(e) {
+      // Don't double-fire if click was directly on the input
+      if (e.target.type === 'number') return;
+      var cb = card.querySelector('.member-checkbox');
+      cb.checked = !cb.checked;
+      cb.dispatchEvent(new Event('change'));
+    });
+  });
+
+  // Custom amount inputs: update total on change
   document.querySelectorAll('.custom-amt').forEach(function(inp) {
     inp.addEventListener('input', updateCustomTotal);
+    // Prevent card click from propagating
+    inp.addEventListener('click', function(e) { e.stopPropagation(); });
   });
+
+  // Amount field update
   amountInput.addEventListener('input', function() {
-    if (customRadio.checked) updateCustomTotal();
+    if (customRadio.checked) {
+      updateCustomTotal();
+    } else {
+      updateEqualShares();
+    }
+    summaryTotal.textContent = '\u20B9' + (parseFloat(this.value) || 0).toFixed(2);
   });
 
-  // Select all checkbox (equal mode only)
+  // Select All
   document.getElementById('select-all-members').addEventListener('change', function() {
-    document.querySelectorAll('.member-checkbox').forEach(function(cb) { cb.checked = this.checked; }.bind(this));
+    var checked = this.checked;
+    document.querySelectorAll('.member-checkbox').forEach(function(cb) {
+      cb.checked = checked;
+      updateCardState(cb.closest('label'), checked);
+    });
+    updateEqualShares();
   });
 
-  // Hard block on submit — safety net in case button state gets out of sync
-  document.querySelector('form').addEventListener('submit', function(e) {
+  // ── Submit guard ──────────────────────────────────────────────────────────
+  document.getElementById('expense-form').addEventListener('submit', function(e) {
     if (customRadio.checked) {
       var total = 0;
       document.querySelectorAll('.custom-amt').forEach(function(inp) {
@@ -232,5 +535,9 @@
       }
     }
   });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  setEqualMode();
 </script>
-{% endblock %}
+</body>
+</html>

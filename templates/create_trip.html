@@ -1,64 +1,368 @@
-{% extends 'base.html' %}
-{% block title %}Create Trip – SplitEase{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Create Trip – SplitEase</title>
+  <link rel="icon" type="image/jpeg" href="{% static 'icons/logo.jpg' %}"/>
+  <link rel="apple-touch-icon" href="{% static 'icons/logo.jpg' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#006a6a">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#006a6a",
+            "on-primary": "#e0fffe",
+            "primary-container": "#9ff1f0",
+            "on-primary-container": "#005c5c",
+            "secondary-container": "#cce8e7",
+            "on-secondary-container": "#3d5656",
+            "surface": "#f5fafa",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#edf5f5",
+            "surface-container": "#e6f0f0",
+            "surface-container-high": "#e0eaeb",
+            "surface-container-highest": "#d8e5e6",
+            "on-surface": "#293435",
+            "on-surface-variant": "#556162",
+            "outline": "#717d7e",
+            "outline-variant": "#a8b4b5",
+            "error": "#a83836",
+          },
+          fontFamily: { "headline": ["Manrope", "sans-serif"] },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+    body { font-family: 'Inter', sans-serif; background-color: #f5fafa; color: #293435; }
+    h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
+    a { text-decoration: none; color: inherit; }
+    .primary-gradient { background: linear-gradient(135deg, #006a6a 0%, #005d5d 100%); }
 
-{% block content %}
-<a href="{% url 'dashboard' %}" class="back-link">← Back to Dashboard</a>
+    .member-card { transition: all 0.15s ease; }
+    .member-card.is-checked {
+      border-color: #006a6a;
+      background: white;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
 
-<div class="page-header">
-  <div>
-    <h1>Create a New Trip</h1>
-    <p>Set up a group for shared expense tracking.</p>
+<!-- Top Nav -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-sm h-16">
+  <div class="flex justify-between items-center px-6 md:px-8 h-full max-w-screen-2xl mx-auto">
+    <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5">
+      <img src="{% static 'icons/logo.jpg' %}" alt="SplitEase" class="w-8 h-8 object-contain rounded-lg">
+      <span class="text-2xl font-black text-teal-800 tracking-tighter">SplitEase</span>
+    </a>
+    <div class="hidden md:flex items-center gap-2 text-on-surface-variant text-xs">
+      <a href="{% url 'dashboard' %}" class="hover:text-primary transition-colors">Dashboard</a>
+      <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+      <span class="text-primary font-semibold">Create Trip</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'account_settings' %}" class="p-2 hover:bg-slate-100 rounded-lg transition-all text-on-surface-variant">
+        <span class="material-symbols-outlined">account_circle</span>
+      </a>
+      <form method="post" action="{% url 'logout' %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="p-2 hover:bg-slate-100 rounded-lg transition-all text-on-surface-variant" title="Logout">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </form>
+    </div>
   </div>
-</div>
+</header>
 
-<div style="max-width: 600px;">
-  <div class="card">
-    <form method="post">
+<main class="pt-24 pb-28 px-5 md:px-10 max-w-7xl mx-auto">
+
+  <!-- Django Messages -->
+  {% if messages %}
+    <div class="mb-8 space-y-2">
+      {% for message in messages %}
+        <div class="px-4 py-3 rounded-xl text-sm font-medium
+          {% if message.tags == 'success' %}bg-teal-50 text-teal-800 border border-teal-200
+          {% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+          {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Page Header -->
+  <div class="mb-12">
+    <h1 class="text-5xl md:text-6xl font-extrabold tracking-tighter text-on-surface mb-4">Plan a New Trip</h1>
+    <p class="text-on-surface-variant text-base max-w-xl leading-relaxed">Set up a group and start tracking shared expenses with your friends.</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+
+    <!-- FORM (left, 7 cols) -->
+    <form method="post" class="lg:col-span-7 space-y-8">
       {% csrf_token %}
 
-      <div class="form-group">
-        <label class="form-label" for="id_name">Trip Name *</label>
-        <input type="text" name="name" id="id_name" class="form-control"
-          value="{{ form.name.value|default:'' }}" required placeholder="e.g. Goa Trip 2025">
-        {% if form.name.errors %}
-          <ul class="errorlist">{% for e in form.name.errors %}<li>{{ e }}</li>{% endfor %}</ul>
-        {% endif %}
-      </div>
+      <!-- Trip Identity -->
+      <section class="bg-surface-container-low p-8 md:p-10 rounded-2xl border border-outline-variant/10 shadow-sm space-y-6">
+        <div>
+          <label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-3">Trip Identity</label>
+          <input type="text" name="name" id="id_name" required
+            value="{{ form.name.value|default:'' }}"
+            placeholder="Where are we going?"
+            class="w-full bg-surface-container-high border-none rounded-xl py-5 px-6 text-2xl font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant outline-none"/>
+          {% if form.name.errors %}
+            <p class="text-error text-xs font-medium mt-1.5">{% for e in form.name.errors %}{{ e }}{% endfor %}</p>
+          {% endif %}
+        </div>
+        <div>
+          <textarea name="description" id="id_description" rows="3"
+            placeholder="Describe the vibe of the trip..."
+            class="w-full bg-surface-container-high border-none rounded-xl py-4 px-6 text-base focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant outline-none resize-none">{{ form.description.value|default:'' }}</textarea>
+        </div>
+      </section>
 
-      <div class="form-group">
-        <label class="form-label" for="id_description">Description</label>
-        <textarea name="description" id="id_description" class="form-control"
-          placeholder="Optional trip description...">{{ form.description.value|default:'' }}</textarea>
-      </div>
+      <!-- Invite Members -->
+      <section class="bg-surface-container-low p-8 md:p-10 rounded-2xl border border-outline-variant/10 shadow-sm">
+        <div class="flex justify-between items-end mb-6">
+          <div>
+            <label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-1">Invite Members</label>
+            <h3 class="text-2xl font-bold">Who's coming along?</h3>
+          </div>
+          <p class="text-xs text-on-surface-variant text-right max-w-[160px] leading-relaxed">You are automatically added as a member.</p>
+        </div>
 
-      <div class="form-group">
-        <label class="form-label">Invite Members</label>
-        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.5rem;">
-          You are automatically added as a member.
-        </p>
         {% if form.members.field.queryset.count > 0 %}
-          <div class="checkbox-list">
+          <div class="space-y-3" id="members-list">
             {% for choice in form.members %}
-              <label>
-                <input type="checkbox" name="members" value="{{ choice.data.value }}"
-                  class="member-checkbox"
-                  {% if choice.data.value|stringformat:"s" in form.members.value|default_if_none:"" %}checked{% endif %}>
-                {{ choice.choice_label }}
-              </label>
+            <label id="member-card-{{ choice.data.value }}"
+              class="member-card flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest border-2 border-transparent cursor-pointer hover:border-primary/20 shadow-sm transition-all">
+
+              <input type="checkbox" name="members" value="{{ choice.data.value }}"
+                class="member-checkbox sr-only"
+                {% if choice.data.value|stringformat:"s" in form.members.value|default_if_none:"" %}checked{% endif %}>
+
+              <div class="flex items-center gap-4">
+                <div class="w-11 h-11 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-base flex-shrink-0">
+                  {{ choice.choice_label|first|upper }}
+                </div>
+                <div>
+                  <p class="font-bold text-sm text-on-surface">{{ choice.choice_label }}</p>
+                  <p class="text-[10px] text-on-surface-variant font-medium">Friend</p>
+                </div>
+              </div>
+
+              <!-- Check circle -->
+              <div class="check-circle w-6 h-6 rounded-full border-2 border-outline-variant flex items-center justify-center transition-all flex-shrink-0">
+                <span class="material-symbols-outlined text-[14px] text-primary check-tick" style="opacity:0;">check</span>
+              </div>
+            </label>
             {% endfor %}
           </div>
+
+          {% if form.members.errors %}
+            <p class="text-error text-xs font-medium mt-3">{% for e in form.members.errors %}{{ e }}{% endfor %}</p>
+          {% endif %}
+
         {% else %}
-          <p style="color:var(--text-muted);font-size:0.88rem;padding:0.75rem;background:#f8fafc;border-radius:8px;">
-            No other users registered yet. Invite them to join!
-          </p>
+          <div class="flex flex-col items-center py-10 text-center bg-surface-container rounded-xl">
+            <span class="material-symbols-outlined text-slate-300 mb-3" style="font-size:3rem;">group_add</span>
+            <p class="font-bold text-sm mb-1">No friends yet</p>
+            <p class="text-on-surface-variant text-xs max-w-xs">Add friends first, then you can invite them to trips.</p>
+            <a href="{% url 'friends' %}" class="mt-4 text-sm font-bold text-primary hover:underline flex items-center gap-1">
+              <span class="material-symbols-outlined text-[16px]">person_add</span>
+              Go to Friends
+            </a>
+          </div>
         {% endif %}
+      </section>
+
+      <!-- Actions -->
+      <div class="flex gap-4 pt-2">
+        <button type="submit"
+          class="flex-1 primary-gradient text-on-primary py-4 rounded-2xl font-bold text-base hover:opacity-90 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-[20px]">luggage</span>
+          Create Trip
+        </button>
+        <a href="{% url 'dashboard' %}"
+          class="px-8 py-4 rounded-2xl font-bold text-base text-on-surface-variant bg-surface-container hover:bg-surface-container-high transition-all flex items-center">
+          Cancel
+        </a>
       </div>
 
-      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
-        <button type="submit" class="btn btn-primary">Create Trip</button>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline">Cancel</a>
-      </div>
     </form>
+
+    <!-- RIGHT SIDEBAR (5 cols, sticky) -->
+    <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+
+      <!-- Summary card -->
+      <div class="bg-white border border-outline-variant/20 rounded-2xl shadow-sm p-8">
+        <div class="flex items-center gap-4 mb-8">
+          <div class="w-11 h-11 bg-primary/10 flex items-center justify-center rounded-xl">
+            <span class="material-symbols-outlined text-primary">luggage</span>
+          </div>
+          <div>
+            <h2 class="font-bold text-lg text-on-surface leading-tight">Trip Overview</h2>
+            <p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Configuration</p>
+          </div>
+        </div>
+
+        <div class="space-y-7">
+          <div class="relative pl-7 border-l-2 border-primary-container">
+            <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary border-4 border-white shadow-sm"></div>
+            <h4 class="font-bold text-sm text-on-surface mb-1">Shared Expenses</h4>
+            <p class="text-sm text-on-surface-variant leading-relaxed">Add expenses with equal or custom splits. Balances update in real time for every member.</p>
+          </div>
+          <div class="relative pl-7 border-l-2 border-primary-container">
+            <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary border-4 border-white shadow-sm"></div>
+            <h4 class="font-bold text-sm text-on-surface mb-1">Smart Settlements</h4>
+            <p class="text-sm text-on-surface-variant leading-relaxed">SplitEase calculates the minimum number of payments to settle all debts. Pay directly with UPI.</p>
+          </div>
+          <div class="relative pl-7 border-l-2 border-transparent">
+            <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary border-4 border-white shadow-sm"></div>
+            <h4 class="font-bold text-sm text-on-surface mb-1">Full History</h4>
+            <p class="text-sm text-on-surface-variant leading-relaxed">Every expense and settlement is recorded. Review the complete trip ledger anytime.</p>
+          </div>
+        </div>
+
+        <!-- Selected members preview -->
+        <div class="mt-8 pt-7 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-sm font-medium text-on-surface-variant">Selected Members</span>
+            <span class="text-sm font-bold text-primary" id="selected-count">0 selected</span>
+          </div>
+          <div class="flex flex-wrap gap-2" id="selected-avatars">
+            <!-- JS populates this -->
+            <span class="text-xs text-on-surface-variant italic" id="no-members-hint">None selected yet</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tip card -->
+      <div class="p-6 bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/40">
+        <h4 class="font-bold text-sm flex items-center gap-2 mb-3 text-on-surface">
+          <span class="material-symbols-outlined text-primary text-[20px]">lightbulb</span>
+          Tip
+        </h4>
+        <p class="text-xs text-on-surface-variant leading-relaxed">
+          You can add or remove members from a trip after creating it. Only friends you've added on SplitEase will appear in the list.
+        </p>
+      </div>
+
+    </div>
   </div>
-</div>
-{% endblock %}
+</main>
+
+<!-- Mobile Bottom Nav -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-lg border-t border-slate-100 z-50">
+  <div class="flex justify-around items-center px-2 h-16">
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[22px]">dashboard</span>
+      <span class="text-[10px] font-medium">Home</span>
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'personal_expenses' %}">
+      <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+      <span class="text-[10px] font-medium">Expenses</span>
+    </a>
+    <a href="{% url 'dashboard' %}" class="flex items-center justify-center primary-gradient text-on-primary w-12 h-12 rounded-full shadow-lg -mt-6">
+      <span class="material-symbols-outlined">home</span>
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400 relative" href="{% url 'friends' %}">
+      <span class="material-symbols-outlined text-[22px]">group</span>
+      <span class="text-[10px] font-medium">Friends</span>
+      {% if pending_friend_requests_count %}
+        <span class="absolute top-0 right-0 bg-teal-500 text-white rounded-full w-4 h-4 text-[9px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+      {% endif %}
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'account_settings' %}">
+      <span class="material-symbols-outlined text-[22px]">account_circle</span>
+      <span class="text-[10px] font-medium">Account</span>
+    </a>
+  </div>
+</nav>
+
+<script>
+  // ── Member card toggle ────────────────────────────────────────────────────
+  var selectedCount = document.getElementById('selected-count');
+  var selectedAvatars = document.getElementById('selected-avatars');
+  var noMembersHint = document.getElementById('no-members-hint');
+
+  function getLabel(card) {
+    var p = card.querySelector('p.font-bold');
+    return p ? p.textContent.trim() : '?';
+  }
+
+  function updateSidebar() {
+    var checked = document.querySelectorAll('.member-checkbox:checked');
+    var count = checked.length;
+    selectedCount.textContent = count + ' selected';
+
+    // Rebuild avatar row
+    selectedAvatars.innerHTML = '';
+    if (count === 0) {
+      var hint = document.createElement('span');
+      hint.className = 'text-xs text-on-surface-variant italic';
+      hint.textContent = 'None selected yet';
+      selectedAvatars.appendChild(hint);
+    } else {
+      checked.forEach(function(cb) {
+        var label = getLabel(cb.closest('label'));
+        var av = document.createElement('div');
+        av.className = 'w-9 h-9 rounded-full flex items-center justify-center text-on-primary-container font-bold text-sm flex-shrink-0';
+        av.style.background = '#9ff1f0';
+        av.style.color = '#005c5c';
+        av.textContent = label.charAt(0).toUpperCase();
+        av.title = label;
+        selectedAvatars.appendChild(av);
+      });
+    }
+  }
+
+  function updateCardState(card, checked) {
+    var tick = card.querySelector('.check-tick');
+    var circle = card.querySelector('.check-circle');
+    if (checked) {
+      card.classList.add('is-checked');
+      if (tick) tick.style.opacity = '1';
+      if (circle) { circle.style.borderColor = '#006a6a'; circle.style.background = '#e6f0f0'; }
+    } else {
+      card.classList.remove('is-checked');
+      if (tick) tick.style.opacity = '0';
+      if (circle) { circle.style.borderColor = ''; circle.style.background = ''; }
+    }
+  }
+
+  // Initialise states
+  document.querySelectorAll('.member-checkbox').forEach(function(cb) {
+    updateCardState(cb.closest('label'), cb.checked);
+  });
+  updateSidebar();
+
+  // Click on card toggles checkbox
+  document.querySelectorAll('.member-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var cb = card.querySelector('.member-checkbox');
+      cb.checked = !cb.checked;
+      updateCardState(card, cb.checked);
+      updateSidebar();
+    });
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    });
+  }
+</script>
+</body>
+</html>

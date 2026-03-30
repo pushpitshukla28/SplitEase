@@ -1,160 +1,550 @@
-{% extends 'base.html' %}
-{% block title %}My Expenses – SplitEase{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>My Expenses – SplitEase</title>
+  <link rel="icon" type="image/jpeg" href="{% static 'icons/logo.jpg' %}"/>
+  <link rel="apple-touch-icon" href="{% static 'icons/logo.jpg' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#006a6a">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#006a6a",
+            "on-primary": "#e0fffe",
+            "primary-container": "#9ff1f0",
+            "on-primary-container": "#005c5c",
+            "secondary-container": "#cce8e7",
+            "on-secondary-container": "#3d5656",
+            "tertiary-container": "#b5e0fd",
+            "on-tertiary-container": "#255169",
+            "surface": "#f5fafa",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#edf5f5",
+            "surface-container": "#e6f0f0",
+            "surface-container-high": "#e0eaeb",
+            "surface-container-highest": "#d8e5e6",
+            "on-surface": "#293435",
+            "on-surface-variant": "#556162",
+            "outline-variant": "#a8b4b5",
+            "error": "#a83836",
+          },
+          fontFamily: { "headline": ["Manrope", "sans-serif"] },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block; line-height: 1;
+    }
+    .filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    body { font-family: 'Inter', sans-serif; background-color: #f5fafa; color: #293435; }
+    h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
+    a { text-decoration: none; color: inherit; }
+    .primary-gradient { background: linear-gradient(135deg, #006a6a 0%, #005d5d 100%); }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
 
-{% block content %}
-<div class="page-header">
-  <div>
-    <h1>My Personal Expenses</h1>
-    <p>Track your individual spending.</p>
-  </div>
-  <button id="toggle-pe-form" class="btn btn-primary">
-    + Add Expense <span class="toggle-icon">▼</span>
-  </button>
-</div>
-
-<!-- Add Expense Form -->
-<div id="pe-form-section" class="card" style="margin-bottom:1.75rem;display:none;">
-  <div class="card-header"><h3>Add New Expense</h3></div>
-  <form method="post">
-    {% csrf_token %}
-    <div class="pe-form-grid">
-      <div class="form-group">
-        <label class="form-label" for="id_amount">Amount (₹) *</label>
-        <input type="number" name="amount" id="id_amount" class="form-control"
-          value="{{ form.amount.value|default:'' }}" step="0.01" min="0.01" required placeholder="0.00">
-        {% if form.amount.errors %}
-          <ul class="errorlist">{% for e in form.amount.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+<!-- Top Nav -->
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm">
+  <div class="flex justify-between items-center px-6 md:px-8 h-16 max-w-screen-2xl mx-auto">
+    <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5">
+      <img src="{% static 'icons/logo.jpg' %}" alt="SplitEase" class="w-8 h-8 object-contain rounded-lg">
+      <span class="text-2xl font-black text-teal-800 tracking-tighter">SplitEase</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8">
+      <a class="text-slate-500 hover:text-teal-600 transition-colors font-medium text-sm" href="{% url 'dashboard' %}">Dashboard</a>
+      <a class="text-teal-700 font-bold border-b-2 border-teal-600 pb-1 text-sm" href="{% url 'personal_expenses' %}">My Expenses</a>
+      <a class="text-slate-500 hover:text-teal-600 transition-colors font-medium text-sm relative" href="{% url 'friends' %}">
+        Friends
+        {% if pending_friend_requests_count %}
+          <span class="absolute -top-2 -right-4 bg-teal-500 text-white rounded-full w-4 h-4 text-[10px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
         {% endif %}
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="id_category">Category *</label>
-        <select name="category" id="id_category" class="form-control" required>
-          {% for choice in form.category.field.choices %}
-            <option value="{{ choice.0 }}"
-              {% if form.category.value == choice.0 %}selected{% endif %}>
-              {{ choice.1 }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="id_note">Note</label>
-        <input type="text" name="note" id="id_note" class="form-control"
-          value="{{ form.note.value|default:'' }}" placeholder="Optional note...">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="id_date">Date *</label>
-        <input type="date" name="date" id="id_date" class="form-control"
-          value="{{ form.date.value|default:'' }}" required>
-        {% if form.date.errors %}
-          <ul class="errorlist">{% for e in form.date.errors %}<li>{{ e }}</li>{% endfor %}</ul>
-        {% endif %}
-      </div>
+      </a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <button id="nav-add-btn" onclick="toggleForm()"
+        class="primary-gradient text-on-primary px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 transition-all flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        Add Expense
+      </button>
+      <a href="{% url 'account_settings' %}" class="p-2 hover:bg-slate-100 rounded-lg transition-all text-on-surface-variant">
+        <span class="material-symbols-outlined">account_circle</span>
+      </a>
+      <form method="post" action="{% url 'logout' %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="p-2 hover:bg-slate-100 rounded-lg transition-all text-on-surface-variant" title="Logout">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </form>
     </div>
-    <button type="submit" class="btn btn-primary">Save Expense</button>
-  </form>
-</div>
-
-<!-- Stats -->
-<div class="stats-grid" style="margin-bottom:1.75rem;">
-  <div class="stat-card orange">
-    <div class="stat-label">Total Spent</div>
-    <div class="stat-value">₹{{ total|floatformat:2 }}</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">Transactions</div>
-    <div class="stat-value">{{ expenses.count }}</div>
+</header>
+
+<!-- Sidebar -->
+<aside class="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 bg-slate-50 border-r border-slate-100 z-40 pt-20">
+  <div class="px-6 mb-8">
+    <div class="w-11 h-11 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-lg mb-3">
+      {{ request.user.username|first|upper }}
+    </div>
+    <h3 class="font-bold text-on-surface text-sm">{{ request.user.get_full_name|default:request.user.username }}</h3>
+    <p class="text-xs text-on-surface-variant mt-0.5">Personal Finance</p>
   </div>
-</div>
-
-<!-- Category breakdown -->
-{% if cat_totals %}
-<div class="section-title" style="margin-bottom:0.75rem;">Category Breakdown</div>
-<div class="cat-grid" style="margin-bottom:1.75rem;">
-  {% for label, amt in cat_totals.items %}
-  <div class="cat-item">
-    <div class="cat-label">{{ label }}</div>
-    <div class="cat-amount">₹{{ amt|floatformat:2 }}</div>
+  <nav class="flex-1 px-4 space-y-0.5">
+    <a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-teal-50 hover:text-teal-600 transition-all rounded-lg text-sm" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[20px]">dashboard</span>
+      Dashboard
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 bg-white text-teal-700 border-l-4 border-teal-600 font-bold text-sm rounded-r-lg" href="{% url 'personal_expenses' %}">
+      <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+      My Expenses
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-teal-50 hover:text-teal-600 transition-all rounded-lg text-sm" href="{% url 'friends' %}">
+      <span class="material-symbols-outlined text-[20px]">group</span>
+      Friends
+      {% if pending_friend_requests_count %}
+        <span class="ml-auto bg-teal-500 text-white rounded-full w-5 h-5 text-[10px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+      {% endif %}
+    </a>
+  </nav>
+  <div class="p-4 border-t border-slate-100 space-y-1">
+    <a class="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-teal-600 transition-all rounded-lg text-sm" href="{% url 'account_settings' %}">
+      <span class="material-symbols-outlined text-[18px]">settings</span>
+      Account Settings
+    </a>
+    <form method="post" action="{% url 'logout' %}" style="margin:0;">
+      {% csrf_token %}
+      <button type="submit" class="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-red-500 transition-all rounded-lg text-sm w-full">
+        <span class="material-symbols-outlined text-[18px]">logout</span>
+        Logout
+      </button>
+    </form>
   </div>
-  {% endfor %}
-</div>
-{% endif %}
+</aside>
 
-<!-- Monthly Summary -->
-{% if monthly_totals %}
-<div class="section-title" style="margin-bottom:0.75rem;">Monthly Summary</div>
-<div class="cat-grid" style="margin-bottom:1.75rem;">
-  {% for row in monthly_totals %}
-  <div class="cat-item">
-    <div class="cat-label">{{ row.month|date:"M Y" }}</div>
-    <div class="cat-amount">₹{{ row.total|floatformat:2 }}</div>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
+<!-- Main Content -->
+<main class="lg:ml-64 pt-24 pb-28 px-5 md:px-10 min-h-screen">
+  <div class="max-w-6xl mx-auto">
 
-<!-- Expense History -->
-<div class="section-title">History</div>
-
-{% if expenses %}
-<div class="card" style="padding:0;">
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Category</th>
-          <th>Note</th>
-          <th>Amount</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for pe in expenses %}
-        <tr>
-          <td style="color:var(--text-muted);white-space:nowrap;">{{ pe.date|date:"d M Y" }}</td>
-          <td>
-            <span class="badge badge-warning">{{ pe.get_category_display }}</span>
-          </td>
-          <td>{{ pe.note|default:"—" }}</td>
-          <td><strong>₹{{ pe.amount|floatformat:2 }}</strong></td>
-          <td>
-            <form method="post" action="{% url 'delete_personal_expense' pe.pk %}"
-              class="confirm-delete delete-btn-form">
-              {% csrf_token %}
-              <button type="submit">Delete</button>
-            </form>
-          </td>
-        </tr>
+    <!-- Django Messages -->
+    {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for message in messages %}
+          <div class="px-4 py-3 rounded-xl text-sm font-medium
+            {% if message.tags == 'success' %}bg-teal-50 text-teal-800 border border-teal-200
+            {% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+            {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+            {{ message }}
+          </div>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% else %}
-<div class="empty-state" style="border:2px dashed var(--border);border-radius:var(--radius);padding:3rem 1rem;">
-  <h3>No expenses logged yet</h3>
-  <p>Start tracking your spending — click <strong>+ Add Expense</strong> above to add your first entry.</p>
-  <br>
-  <button onclick="document.getElementById('pe-form-section').style.display='block';window.scrollTo({top:0,behavior:'smooth'});" class="btn btn-primary">
-    + Add Your First Expense
-  </button>
-</div>
-{% endif %}
-{% endblock %}
+      </div>
+    {% endif %}
 
-{% block extra_js %}
+    <!-- Page Header -->
+    <header class="mb-10 flex items-end justify-between gap-4">
+      <div>
+        <span class="text-primary font-semibold tracking-widest text-xs uppercase mb-2 block">Ledger Overview</span>
+        <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface">Personal Expenses</h1>
+        <p class="text-on-surface-variant text-sm mt-2 max-w-lg">Your individual spending breakdown across categories and time.</p>
+      </div>
+      <button onclick="toggleForm()"
+        class="primary-gradient text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition-all flex-shrink-0 hidden md:flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        Add Expense
+      </button>
+    </header>
+
+    <!-- Add Expense Form (collapsible) -->
+    <div id="pe-form-section" class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden mb-8" style="display:none;">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-base">New Expense</h3>
+        <button onclick="toggleForm()" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form method="post" class="p-6">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+          <!-- Amount -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest" for="id_amount">Amount (&#8377;) *</label>
+            <div class="bg-surface-container-low rounded-xl px-4 py-3 flex items-center gap-2">
+              <span class="text-primary font-bold">&#8377;</span>
+              <input type="number" name="amount" id="id_amount"
+                value="{{ form.amount.value|default:'' }}"
+                step="0.01" min="0.01" required placeholder="0.00"
+                class="bg-transparent border-none focus:ring-0 text-sm font-semibold w-full p-0"/>
+            </div>
+            {% if form.amount.errors %}
+              <p class="text-error text-xs font-medium">{% for e in form.amount.errors %}{{ e }}{% endfor %}</p>
+            {% endif %}
+          </div>
+
+          <!-- Category -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest" for="id_category">Category *</label>
+            <div class="bg-surface-container-low rounded-xl px-4 py-3">
+              <select name="category" id="id_category" required
+                class="bg-transparent border-none focus:ring-0 text-sm font-semibold text-on-surface w-full p-0 cursor-pointer">
+                {% for choice in form.category.field.choices %}
+                  <option value="{{ choice.0 }}" {% if form.category.value == choice.0 %}selected{% endif %}>
+                    {{ choice.1 }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Note -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest" for="id_note">Note</label>
+            <div class="bg-surface-container-low rounded-xl px-4 py-3">
+              <input type="text" name="note" id="id_note"
+                value="{{ form.note.value|default:'' }}"
+                placeholder="Optional note..."
+                class="bg-transparent border-none focus:ring-0 text-sm font-medium w-full p-0 placeholder:text-outline"/>
+            </div>
+          </div>
+
+          <!-- Date -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest" for="id_date">Date *</label>
+            <div class="bg-surface-container-low rounded-xl px-4 py-3">
+              <input type="date" name="date" id="id_date" required
+                value="{{ form.date.value|default:'' }}"
+                class="bg-transparent border-none focus:ring-0 text-sm font-semibold text-on-surface w-full p-0 cursor-pointer"/>
+            </div>
+            {% if form.date.errors %}
+              <p class="text-error text-xs font-medium">{% for e in form.date.errors %}{{ e }}{% endfor %}</p>
+            {% endif %}
+          </div>
+
+        </div>
+        <div class="mt-5 flex gap-3">
+          <button type="submit" class="primary-gradient text-on-primary px-6 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition-all">
+            Save Expense
+          </button>
+          <button type="button" onclick="toggleForm()"
+            class="px-6 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant bg-surface-container hover:bg-surface-container-high transition-all">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Bento Dashboard Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12">
+
+      <!-- Total + Monthly Chart (7 cols) -->
+      <div class="md:col-span-7 bg-surface-container-lowest rounded-2xl p-8 flex flex-col justify-between shadow-sm group hover:shadow-md transition-all">
+        <div>
+          <div class="flex justify-between items-start mb-4">
+            <h2 class="text-on-surface-variant font-medium text-sm">Total Tracked Spend</h2>
+            <span class="bg-primary-container text-on-primary-container text-[10px] px-2.5 py-1 rounded-full font-bold">
+              {{ expenses.count }} transaction{{ expenses.count|pluralize }}
+            </span>
+          </div>
+          <div class="text-5xl md:text-6xl font-black text-on-surface tracking-tighter">
+            &#8377;{{ total|floatformat:2 }}
+          </div>
+        </div>
+
+        <!-- Monthly Bar Chart -->
+        {% if monthly_totals %}
+        <div class="mt-8">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-3">Monthly Trend</p>
+          <div class="w-full h-24 flex items-end gap-1.5" id="monthly-bars">
+            {% for row in monthly_totals %}
+              <div class="flex-1 flex flex-col items-center gap-1 group/bar" title="{{ row.month|date:'M Y' }}: ₹{{ row.total|floatformat:2 }}">
+                <div class="w-full bg-surface-container-high rounded-t group-hover/bar:bg-teal-300 transition-all bar-col"
+                  data-amount="{{ row.total }}" style="height:20px;"></div>
+                <span class="text-[8px] text-on-surface-variant font-medium">{{ row.month|date:"M" }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="mt-8 flex items-center gap-2 text-on-surface-variant text-sm">
+          <span class="material-symbols-outlined text-[18px]">bar_chart</span>
+          No monthly data yet
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Category Breakdown (5 cols) -->
+      <div class="md:col-span-5 bg-surface-container-low rounded-2xl p-8">
+        <h3 class="font-bold text-on-surface mb-6">Category Breakdown</h3>
+        {% if cat_totals %}
+          <div class="space-y-5">
+            {% for label, amt in cat_totals.items %}
+            <div class="flex items-center gap-4">
+              <!-- Category icon -->
+              <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                {% if label == 'Food' %}bg-blue-50
+                {% elif label == 'Transport' %}bg-teal-50
+                {% elif label == 'Shopping' %}bg-amber-50
+                {% elif label == 'Entertainment' %}bg-purple-50
+                {% elif label == 'Health' %}bg-red-50
+                {% elif label == 'Utilities' %}bg-orange-50
+                {% elif label == 'Rent' %}bg-slate-100
+                {% elif label == 'Travel' %}bg-sky-50
+                {% else %}bg-gray-100{% endif %}">
+                <span class="material-symbols-outlined filled text-xl
+                  {% if label == 'Food' %}text-blue-600
+                  {% elif label == 'Transport' %}text-teal-600
+                  {% elif label == 'Shopping' %}text-amber-600
+                  {% elif label == 'Entertainment' %}text-purple-600
+                  {% elif label == 'Health' %}text-red-600
+                  {% elif label == 'Utilities' %}text-orange-600
+                  {% elif label == 'Rent' %}text-slate-600
+                  {% elif label == 'Travel' %}text-sky-600
+                  {% else %}text-gray-500{% endif %}">
+                  {% if label == 'Food' %}restaurant
+                  {% elif label == 'Transport' %}commute
+                  {% elif label == 'Shopping' %}shopping_bag
+                  {% elif label == 'Entertainment' %}sports_esports
+                  {% elif label == 'Health' %}favorite
+                  {% elif label == 'Utilities' %}bolt
+                  {% elif label == 'Rent' %}home
+                  {% elif label == 'Travel' %}flight
+                  {% else %}category{% endif %}
+                </span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between text-sm mb-1.5">
+                  <span class="font-semibold truncate">{{ label }}</span>
+                  <span class="text-on-surface-variant flex-shrink-0 ml-2">&#8377;{{ amt|floatformat:2 }}</span>
+                </div>
+                <div class="w-full bg-white rounded-full h-1.5 overflow-hidden">
+                  <div class="h-full rounded-full
+                    {% if label == 'Food' %}bg-blue-400
+                    {% elif label == 'Transport' %}bg-teal-400
+                    {% elif label == 'Shopping' %}bg-amber-400
+                    {% elif label == 'Entertainment' %}bg-purple-400
+                    {% elif label == 'Health' %}bg-red-400
+                    {% elif label == 'Utilities' %}bg-orange-400
+                    {% elif label == 'Rent' %}bg-slate-400
+                    {% elif label == 'Travel' %}bg-sky-400
+                    {% else %}bg-gray-400{% endif %}"
+                    style="width: {% widthratio amt total 100 %}%"></div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="flex flex-col items-center justify-center h-40 text-on-surface-variant">
+            <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">pie_chart</span>
+            <p class="text-sm">No category data yet</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Transaction Ledger -->
+    <section>
+      <div class="flex justify-between items-end mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-on-surface">Transaction Ledger</h2>
+          <p class="text-sm text-on-surface-variant mt-1">All your logged personal expenses.</p>
+        </div>
+      </div>
+
+      {% if expenses %}
+        <!-- Desktop Table -->
+        <div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm hidden md:block">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="bg-surface-container-low text-[10px] uppercase tracking-widest text-on-surface-variant">
+                <th class="px-6 py-4 font-bold">Transaction</th>
+                <th class="px-6 py-4 font-bold">Category</th>
+                <th class="px-6 py-4 font-bold">Date</th>
+                <th class="px-6 py-4 font-bold text-right">Amount</th>
+                <th class="px-6 py-4 font-bold"></th>
+              </tr>
+            </thead>
+            <tbody class="text-sm divide-y divide-slate-50">
+              {% for pe in expenses %}
+              <tr class="hover:bg-surface-container transition-colors">
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant flex-shrink-0">
+                      <span class="material-symbols-outlined text-[16px]">
+                        {% if pe.category == 'food' %}restaurant
+                        {% elif pe.category == 'transport' %}commute
+                        {% elif pe.category == 'shopping' %}shopping_bag
+                        {% elif pe.category == 'entertainment' %}sports_esports
+                        {% elif pe.category == 'health' %}favorite
+                        {% elif pe.category == 'utilities' %}bolt
+                        {% elif pe.category == 'rent' %}home
+                        {% elif pe.category == 'travel' %}flight
+                        {% else %}category{% endif %}
+                      </span>
+                    </div>
+                    <span class="font-semibold text-on-surface">{{ pe.note|default:"—" }}</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <span class="px-2.5 py-1 bg-surface-container rounded-full text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">
+                    {{ pe.get_category_display }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-on-surface-variant">{{ pe.date|date:"d M Y" }}</td>
+                <td class="px-6 py-4 text-right font-bold text-on-surface">&#8377;{{ pe.amount|floatformat:2 }}</td>
+                <td class="px-6 py-4 text-right">
+                  <form method="post" action="{% url 'delete_personal_expense' pe.pk %}"
+                    onsubmit="return confirm('Delete this expense?')" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="text-[11px] font-bold text-red-400 hover:text-red-600 flex items-center gap-0.5 ml-auto transition-colors">
+                      <span class="material-symbols-outlined text-[14px]">delete</span>
+                      Delete
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile Cards -->
+        <div class="md:hidden space-y-3">
+          {% for pe in expenses %}
+          <div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-on-surface-variant flex-shrink-0">
+              <span class="material-symbols-outlined text-[18px]">
+                {% if pe.category == 'food' %}restaurant
+                {% elif pe.category == 'transport' %}commute
+                {% elif pe.category == 'shopping' %}shopping_bag
+                {% elif pe.category == 'entertainment' %}sports_esports
+                {% elif pe.category == 'health' %}favorite
+                {% elif pe.category == 'utilities' %}bolt
+                {% elif pe.category == 'rent' %}home
+                {% elif pe.category == 'travel' %}flight
+                {% else %}category{% endif %}
+              </span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-sm truncate">{{ pe.note|default:"—" }}</p>
+              <p class="text-[10px] text-on-surface-variant">{{ pe.get_category_display }} &bull; {{ pe.date|date:"d M Y" }}</p>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <p class="font-bold text-sm">&#8377;{{ pe.amount|floatformat:2 }}</p>
+              <form method="post" action="{% url 'delete_personal_expense' pe.pk %}"
+                onsubmit="return confirm('Delete this expense?')" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="text-[10px] font-bold text-red-400 hover:text-red-600 transition-colors">Delete</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+      {% else %}
+        <div class="text-center py-20 bg-surface-container-lowest rounded-2xl border-2 border-dashed border-surface-container-high">
+          <span class="material-symbols-outlined text-slate-300 block mb-4" style="font-size:3.5rem;">receipt_long</span>
+          <h3 class="text-xl font-bold mb-2">No expenses logged yet</h3>
+          <p class="text-on-surface-variant text-sm mb-6 max-w-sm mx-auto">Start tracking your personal spending — click <strong>Add Expense</strong> to add your first entry.</p>
+          <button onclick="toggleForm(); window.scrollTo({top:0,behavior:'smooth'});"
+            class="primary-gradient text-on-primary px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all inline-flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            Add Your First Expense
+          </button>
+        </div>
+      {% endif %}
+    </section>
+
+  </div>
+</main>
+
+<!-- Mobile Bottom Nav -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-lg border-t border-slate-100 z-50">
+  <div class="flex justify-around items-center px-2 h-16">
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-[22px]">dashboard</span>
+      <span class="text-[10px] font-medium">Home</span>
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-teal-700" href="{% url 'personal_expenses' %}">
+      <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+      <span class="text-[10px] font-bold">Expenses</span>
+    </a>
+    <button onclick="toggleForm(); window.scrollTo({top:0,behavior:'smooth'});"
+      class="flex items-center justify-center primary-gradient text-on-primary w-12 h-12 rounded-full shadow-lg -mt-6">
+      <span class="material-symbols-outlined">add</span>
+    </button>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400 relative" href="{% url 'friends' %}">
+      <span class="material-symbols-outlined text-[22px]">group</span>
+      <span class="text-[10px] font-medium">Friends</span>
+      {% if pending_friend_requests_count %}
+        <span class="absolute top-0 right-0 bg-teal-500 text-white rounded-full w-4 h-4 text-[9px] font-bold flex items-center justify-center">{{ pending_friend_requests_count }}</span>
+      {% endif %}
+    </a>
+    <a class="flex flex-col items-center gap-0.5 text-slate-400" href="{% url 'account_settings' %}">
+      <span class="material-symbols-outlined text-[22px]">account_circle</span>
+      <span class="text-[10px] font-medium">Account</span>
+    </a>
+  </div>
+</nav>
+
 <script>
-  // Auto-open form if there are errors
+  // ── Form toggle ──────────────────────────────────────────────────────────
+  function toggleForm() {
+    var el = document.getElementById('pe-form-section');
+    if (el.style.display === 'none' || el.style.display === '') {
+      el.style.display = 'block';
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  // Auto-open on validation errors
   {% if form.errors %}
-  $('#pe-form-section').show();
-  $('#toggle-pe-form .toggle-icon').text('▲');
+    document.getElementById('pe-form-section').style.display = 'block';
   {% endif %}
-  // Prevent future dates (local timezone)
-  var t = new Date(); var pad = function(n){return String(n).padStart(2,'0');};
-  document.getElementById('id_date').setAttribute('max', t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate()));
+
+  // Max date = today
+  (function() {
+    var t = new Date(), pad = function(n){ return String(n).padStart(2,'0'); };
+    var el = document.getElementById('id_date');
+    if (el) el.setAttribute('max', t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate()));
+  })();
+
+  // ── Monthly bar chart heights ─────────────────────────────────────────────
+  (function() {
+    var bars = document.querySelectorAll('.bar-col');
+    if (!bars.length) return;
+    var amounts = [];
+    bars.forEach(function(b) { amounts.push(parseFloat(b.getAttribute('data-amount')) || 0); });
+    var maxAmt = Math.max.apply(null, amounts);
+    if (maxAmt === 0) return;
+    var containerH = 72; // px — matches h-24 minus label space
+    bars.forEach(function(b) {
+      var amt = parseFloat(b.getAttribute('data-amount')) || 0;
+      var h = Math.max(4, Math.round((amt / maxAmt) * containerH));
+      b.style.height = h + 'px';
+      if (amt === maxAmt) { b.style.background = '#006a6a'; }
+    });
+  })();
+
+  // PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    });
+  }
 </script>
-{% endblock %}
+</body>
+</html>
