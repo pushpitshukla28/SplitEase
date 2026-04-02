@@ -167,7 +167,7 @@
     <!-- Add Expense Form (collapsible) -->
     <div id="pe-form-section" class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden mb-8" style="display:none;">
       <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-        <h3 class="font-bold text-base">New Expense</h3>
+        <h3 id="form-title" class="font-bold text-base">New Expense</h3>
         <button onclick="toggleForm()" class="text-on-surface-variant hover:text-on-surface transition-colors">
           <span class="material-symbols-outlined">close</span>
         </button>
@@ -232,7 +232,7 @@
 
         </div>
         <div class="mt-5 flex gap-3">
-          <button type="submit" class="primary-gradient text-on-primary px-6 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition-all">
+          <button id="form-submit-btn" type="submit" class="primary-gradient text-on-primary px-6 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition-all">
             Save Expense
           </button>
           <button type="button" onclick="toggleForm()"
@@ -250,7 +250,7 @@
       <div class="md:col-span-7 bg-surface-container-lowest rounded-2xl p-8 flex flex-col justify-between shadow-sm group hover:shadow-md transition-all">
         <div>
           <div class="flex justify-between items-start mb-4">
-            <h2 class="text-on-surface-variant font-medium text-sm">Total Tracked Spend</h2>
+            <h2 class="text-on-surface-variant font-medium text-sm">Net Spend</h2>
             <span class="bg-primary-container text-on-primary-container text-[10px] px-2.5 py-1 rounded-full font-bold">
               {{ expenses.count }} transaction{{ expenses.count|pluralize }}
             </span>
@@ -258,6 +258,12 @@
           <div class="text-5xl md:text-6xl font-black text-on-surface tracking-tighter">
             &#8377;{{ total|floatformat:2 }}
           </div>
+          {% if income_total %}
+          <div class="mt-2 flex items-center gap-1.5 text-green-600 text-sm font-semibold">
+            <span class="material-symbols-outlined text-[16px]">arrow_downward</span>
+            +&#8377;{{ income_total|floatformat:2 }} income received
+          </div>
+          {% endif %}
         </div>
 
         <!-- Monthly Bar Chart -->
@@ -380,7 +386,7 @@
               <tr class="hover:bg-surface-container transition-colors">
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant flex-shrink-0">
+                    <div class="w-8 h-8 rounded-lg {% if pe.category == 'income' %}bg-green-50{% else %}bg-surface-container-high{% endif %} flex items-center justify-center {% if pe.category == 'income' %}text-green-600{% else %}text-on-surface-variant{% endif %} flex-shrink-0">
                       <span class="material-symbols-outlined text-[16px]">
                         {% if pe.category == 'food' %}restaurant
                         {% elif pe.category == 'transport' %}commute
@@ -390,6 +396,7 @@
                         {% elif pe.category == 'utilities' %}bolt
                         {% elif pe.category == 'rent' %}home
                         {% elif pe.category == 'travel' %}flight
+                        {% elif pe.category == 'income' %}savings
                         {% else %}category{% endif %}
                       </span>
                     </div>
@@ -397,12 +404,12 @@
                   </div>
                 </td>
                 <td class="px-6 py-4">
-                  <span class="px-2.5 py-1 bg-surface-container rounded-full text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">
+                  <span class="px-2.5 py-1 {% if pe.category == 'income' %}bg-green-50 text-green-700{% else %}bg-surface-container text-on-surface-variant{% endif %} rounded-full text-[10px] font-bold uppercase tracking-wide">
                     {{ pe.get_category_display }}
                   </span>
                 </td>
                 <td class="px-6 py-4 text-on-surface-variant">{{ pe.date|date:"d M Y" }}</td>
-                <td class="px-6 py-4 text-right font-bold text-on-surface">&#8377;{{ pe.amount|floatformat:2 }}</td>
+                <td class="px-6 py-4 text-right font-bold {% if pe.category == 'income' %}text-green-600{% else %}text-on-surface{% endif %}">{% if pe.category == 'income' %}+{% endif %}&#8377;{{ pe.amount|floatformat:2 }}</td>
                 <td class="px-6 py-4 text-right">
                   <form method="post" action="{% url 'delete_personal_expense' pe.pk %}"
                     onsubmit="return confirm('Delete this expense?')" style="margin:0;">
@@ -423,7 +430,7 @@
         <div class="md:hidden space-y-3">
           {% for pe in expenses %}
           <div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-on-surface-variant flex-shrink-0">
+            <div class="w-10 h-10 rounded-xl {% if pe.category == 'income' %}bg-green-50{% else %}bg-surface-container-high{% endif %} flex items-center justify-center {% if pe.category == 'income' %}text-green-600{% else %}text-on-surface-variant{% endif %} flex-shrink-0">
               <span class="material-symbols-outlined text-[18px]">
                 {% if pe.category == 'food' %}restaurant
                 {% elif pe.category == 'transport' %}commute
@@ -433,6 +440,7 @@
                 {% elif pe.category == 'utilities' %}bolt
                 {% elif pe.category == 'rent' %}home
                 {% elif pe.category == 'travel' %}flight
+                {% elif pe.category == 'income' %}savings
                 {% else %}category{% endif %}
               </span>
             </div>
@@ -441,7 +449,7 @@
               <p class="text-[10px] text-on-surface-variant">{{ pe.get_category_display }} &bull; {{ pe.date|date:"d M Y" }}</p>
             </div>
             <div class="text-right flex-shrink-0">
-              <p class="font-bold text-sm">&#8377;{{ pe.amount|floatformat:2 }}</p>
+              <p class="font-bold text-sm {% if pe.category == 'income' %}text-green-600{% endif %}">{% if pe.category == 'income' %}+{% endif %}&#8377;{{ pe.amount|floatformat:2 }}</p>
               <form method="post" action="{% url 'delete_personal_expense' pe.pk %}"
                 onsubmit="return confirm('Delete this expense?')" style="margin:0;">
                 {% csrf_token %}
@@ -520,6 +528,21 @@
     var t = new Date(), pad = function(n){ return String(n).padStart(2,'0'); };
     var el = document.getElementById('id_date');
     if (el) el.setAttribute('max', t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate()));
+  })();
+
+  // Swap form title/button when income category selected
+  (function() {
+    var sel = document.getElementById('id_category');
+    if (!sel) return;
+    function updateFormLabels() {
+      var isIncome = sel.value === 'income';
+      var title = document.getElementById('form-title');
+      var btn = document.getElementById('form-submit-btn');
+      if (title) title.textContent = isIncome ? 'Add Income' : 'New Expense';
+      if (btn) btn.textContent = isIncome ? 'Save Income' : 'Save Expense';
+    }
+    sel.addEventListener('change', updateFormLabels);
+    updateFormLabels();
   })();
 
   // ── Monthly bar chart heights ─────────────────────────────────────────────

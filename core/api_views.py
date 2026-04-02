@@ -253,9 +253,12 @@ def api_settle_up(request, trip_pk):
 def api_personal_expenses(request):
     expenses = PersonalExpense.objects.filter(user=request.user)
     total = expenses.aggregate(total=db_models.Sum('amount'))['total'] or Decimal('0')
+    income_total = expenses.filter(category='income').aggregate(s=db_models.Sum('amount'))['s'] or Decimal('0')
 
     cat_totals = {}
     for code, label in CATEGORY_CHOICES:
+        if code == 'income':
+            continue
         amt = expenses.filter(category=code).aggregate(s=db_models.Sum('amount'))['s'] or Decimal('0')
         if amt > 0:
             cat_totals[code] = {'label': label, 'amount': str(amt)}
@@ -271,6 +274,7 @@ def api_personal_expenses(request):
     return Response({
         'expenses': PersonalExpenseSerializer(expenses, many=True).data,
         'total': str(total),
+        'income_total': str(income_total),
         'category_totals': cat_totals,
         'monthly_totals': [{'month': str(m['month'])[:7], 'total': str(m['total'])} for m in monthly],
     })

@@ -303,11 +303,15 @@ def personal_expenses(request):
         form = PersonalExpenseForm(initial={'date': timezone.now().date()})
 
     expenses = PersonalExpense.objects.filter(user=request.user)
-    total = expenses.aggregate(total=db_models.Sum('amount'))['total'] or Decimal('0')
+    total_all = expenses.aggregate(total=db_models.Sum('amount'))['total'] or Decimal('0')
+    income_total = expenses.filter(category='income').aggregate(s=db_models.Sum('amount'))['s'] or Decimal('0')
+    total = total_all - income_total  # net spend (expenses only)
 
     from .models import CATEGORY_CHOICES
     cat_totals = {}
     for code, label in CATEGORY_CHOICES:
+        if code == 'income':
+            continue
         amt = expenses.filter(category=code).aggregate(s=db_models.Sum('amount'))['s'] or Decimal('0')
         if amt > 0:
             cat_totals[label] = amt
@@ -325,6 +329,7 @@ def personal_expenses(request):
         'form': form,
         'expenses': expenses,
         'total': total,
+        'income_total': income_total,
         'cat_totals': cat_totals,
         'monthly_totals': monthly_totals,
     }

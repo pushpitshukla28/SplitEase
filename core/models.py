@@ -64,6 +64,7 @@ CATEGORY_CHOICES = [
     ('rent', 'Rent'),
     ('travel', 'Travel'),
     ('other', 'Other'),
+    ('income', 'Income'),
 ]
 
 
